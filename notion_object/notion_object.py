@@ -141,7 +141,6 @@ class Bookmark(NotionObject):
         return { "url": value }
 
     def get_bookmark(self, value: dict) -> Optional[str]:
-        print(value["bookmark"]["url"])
         return value["bookmark"]["url"]
 
 
@@ -150,7 +149,7 @@ class Code(NotionObject):
         "code"
         return Text().text(value)
 
-    def get_code(self, value: dict):
+    def get_code(self, value: dict) -> Optional[str]:
         type_ = value["type"]
         if len(value[type_]["rich_text"]) == 0:
             return None
@@ -158,13 +157,37 @@ class Code(NotionObject):
         # return Text().get_text(value[type_])
 
 
-class DatabaseObject(Title, Date, Text, Number, Select, Checkbox, Email, Phone_number, Url):
+class File(NotionObject):
+    def files(self, value: Optional[dict]) -> dict:
+        raise NotImplementedError("노션 api 에서 파일 못올림!!!.")
+    def file(self, value: Optional[dict]) -> dict:
+        raise NotImplementedError("노션 api 에서 파일 못올림!!!.")
+
+    def get_files(self, value: dict) -> Optional[dict]:
+        if not value["files"]:
+            return None
+        result = {
+            "name": value["files"][0]["name"],
+            "file": value["files"][0]["file"]["url"]
+        }
+        return result
+    def get_file(self, value: dict) -> Optional[dict]:
+        if not value["file"]:
+            return None
+        result = {
+            "name": value["file"]["name"],
+            "file": value["file"]["file"]["url"]
+        }
+        return result
+
+
+class DatabaseObject(Title, Date, Text, Number, Select, Checkbox, Email, Phone_number, Url, File):
     pass
 
 
-class PageObject(Text, Bookmark, Code):
+class PageObject(Text, Bookmark, Code, File):
     pass
 
-class BlockObject(Text, Code):
+class BlockObject(Text, Code, File):
     pass
 

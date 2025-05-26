@@ -1,9 +1,8 @@
-from typing import Union, List
 from abc import ABCMeta, abstractmethod
 from collections.abc import KeysView, ValuesView
 import json
 
-from ..notion_object.notionObject import NotionObject
+from ..notion_object.notion_object import NotionObject
 
 
 class Read(metaclass=ABCMeta):
@@ -25,13 +24,12 @@ class Update(metaclass=ABCMeta):
 
 
 class NotionParent:
-    def __init__(self, key: str, id: str):
-        self.key = key
+    def __init__(self, api_key: str, id: str):
+        self.api_key = api_key
         self.id = id
-        self.datas: List[dict] = []
+        self.datas: list[dict] = []
 
         self._data_parser = NotionDataParser()
-        self._selectPageId = ""
 
     def _add_headers(self, version: str):
         "헤더에 버젼을 추가해서 리턴"
@@ -39,19 +37,27 @@ class NotionParent:
             "Accept": "application/json",
             "Notion-Version": version,
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.key}"
+            "Authorization": f"Bearer {self.api_key}"
         }
 
-    def __join(self, dataList: Union[KeysView, ValuesView]):
-        listStr = [f"{'' if item is None else item}" for item in dataList]
+    def __join(self, data_list: KeysView | ValuesView):
+        listStr = [f"{'' if item is None else item}" for item in data_list]
         return ",".join(listStr)
 
     @property
-    def txt(self) -> str:
+    def to_string(self) -> str:
+        if len(self.datas) == 1:
+            return json.dumps(self.datas[0], ensure_ascii=False)
         return json.dumps(self.datas, ensure_ascii=False)
 
     @property
-    def csv(self) -> str:
+    def to_json(self) -> list[dict] | dict:
+        if len(self.datas) == 1:
+            return self.datas[0]
+        return self.datas
+
+    @property
+    def to_csv(self) -> str:
         "csv 형식의 문자열을 반환합니다"
         datas = self.datas
         result = ""
@@ -70,7 +76,7 @@ class NotionParent:
             return json.dumps(self.datas[0], ensure_ascii=False) #, indent="\t")
         return json.dumps(self.datas, ensure_ascii=False) #, indent="\t")
 
-    def __getitem__(self, value: Union[str, int]):
+    def __getitem__(self, value: str | int):
         if isinstance(value, int):
             return self.datas[value]
 
@@ -81,13 +87,13 @@ class NotionParent:
 
 
 class NotionDataParser:
-    def parse_response(self, data: dict, datas: List[dict], notionObject: NotionObject):
+    def parse_response(self, data: dict, datas: list[dict], notionObject: NotionObject):
         "받은 정보를 내가 보기좋게 가공"
         result = {}
         result_list = datas
 
         if data["object"] == "list":
-            results_datas: List[dict] = data["results"]
+            results_datas: list[dict] = data["results"]
             if results_datas is None:
                 raise ValueError("\n뭐 받음???")
 
@@ -140,20 +146,9 @@ class NotionDataParser:
             result["title"] = item[type_]["title"]
         if type_ == "code":
             result["language"] = item[type_]["language"]
+
         if hasattr(notionObject, f"get_{type_}"):
             result[type_] = getattr(notionObject, f"get_{type_}")(item)
-        # elif type_ in ["paragraph", "heading_1", "heading_2", "heading_3"]:
-        #     if len(item[type_]["rich_text"]) == 0:
-        #         result["text"] = None
-        #     else:
-        #         result["text"] = item[type_]["rich_text"][0]["plain_text"]
-        # elif type_ == "code":
-        #     result["language"] = item[type_]["language"]
-        #     if len(item[type_]["rich_text"]) == 0:
-        #         result["code"] = None
-        #     else:
-        #         result["code"] = item[type_]["rich_text"][0]["plain_text"]
-
 
         return result
 
@@ -171,33 +166,4 @@ class NotionDataParser:
             if hasattr(notionObject, f"get_{type_}"):
                 result[key] = getattr(notionObject, f"get_{type_}")(value)
             
-
-            # if (type_ == "title") or (type_ == "rich_text"):
-            #     if len(value[type_]) == 0:
-            #         result[key] = None
-            #     else:
-            #         result[key] = value[type_][0]["plain_text"]
-            #     continue
-            # elif type_ == "date":
-            #     if value.get("date") is None:
-            #         result[key] = None
-            #     else:
-            #         result[key] = value["date"]["start"]
-            #     continue
-            # elif type_ == "select":
-            #     if value.get("select") is None:
-            #         result[key] = None
-            #     else:
-            #         result[key] = value["select"]["name"]
-            #     continue
-            # elif type_ == "formula":
-            #     if value.get("formula") is None:
-            #         result[key] = None
-            #     else:
-            #         formula = value["formula"]
-            #         result[key] = formula[formula["type"]]
-            #     continue
-
-            # result[key] = value[type_]
-
         return result

@@ -1,21 +1,21 @@
-from typing import Optional, List
+from typing import Optional
 import json
 import requests
 
 from .parent.parent import NotionParent, Read, Write, Update
-from .notion_object.notionObject import DatabaseObject, PageObject, BlockObject
+from .notion_object.notion_object import DatabaseObject, PageObject, BlockObject
 
 
 class Notion:
     @classmethod
-    def database(cls, key: str, DB_id: str):
-        return NotionDatabase(key, DB_id)
+    def database(cls, api_key: str, database_id: str):
+        return NotionDatabase(api_key, database_id)
     @classmethod
-    def page(cls, key: str, page_id: str):
-        return NotionPage(key, page_id)
+    def page(cls, api_key: str, page_id: str):
+        return NotionPage(api_key, page_id)
     @classmethod
-    def block(cls, key: str, block_id: str):
-        return NotionBlock(key, block_id)
+    def block(cls, api_key: str, block_id: str):
+        return NotionBlock(api_key, block_id)
 
 
 class NotionDatabase(NotionParent, Write, Read, Update):
@@ -25,9 +25,9 @@ class NotionDatabase(NotionParent, Write, Read, Update):
 
     메서드 종류
     ```
-    load()            # 기존 데이터들 불러오기
-    write()           # 새로운 데이터 작성
-    select_page_id()     # 특정 속성 선택
+    load()               # 기존 데이터들 불러오기
+    write()              # 새로운 데이터 작성
+    find_page_id()       # 특정 속성 선택
     update_page()        # 선택한 속성 업데이트
     update_properties()  # 속성 이름 바꾸거나 지우기. 쓰일 일 없을놈
 
@@ -43,6 +43,7 @@ class NotionDatabase(NotionParent, Write, Read, Update):
         super().__init__(key, DB_id)
         self._object = DatabaseObject()
         self.payload = { "properties": {} }
+        self._selected_page_id = ""
 
     def read(self, sorts=None, filter_=None):
         "DB 정보 가져오기"
@@ -71,7 +72,7 @@ class NotionDatabase(NotionParent, Write, Read, Update):
         self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
         return self
 
-    def select_page_id(self, properties: str="", name: str = "", id_:str=""):
+    def find_page_id(self, properties: str="", name: str = "", id_:str=""):
         """
         parameter
             properties: 기존 속성의 이름
@@ -94,7 +95,7 @@ class NotionDatabase(NotionParent, Write, Read, Update):
         if page_id == "":
             raise ValueError("\n해당 정보를 찾을 수 없음")
 
-        self._selectPageId = page_id
+        self._selected_page_id = page_id
         return self
 
     def update_properties(self, properties: str, new_name: Optional[str]):
@@ -117,14 +118,14 @@ class NotionDatabase(NotionParent, Write, Read, Update):
         response = requests.patch(url, json=payload, headers=headers)
         self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
         return self
-    
+
     def update(self):
         "데이터베이스의 부분을 업데이트 합니다"
 
-        if self._selectPageId == "":
+        if self._selected_page_id == "":
             raise ValueError("\n페이지 id 값 없음")
 
-        url = f"https://api.notion.com/v1/pages/{self._selectPageId}"
+        url = f"https://api.notion.com/v1/pages/{self._selected_page_id}"
         headers = self._add_headers("2022-06-28")
 
         payload = self.payload
@@ -136,10 +137,10 @@ class NotionDatabase(NotionParent, Write, Read, Update):
     def remove(self):
         "데이터베이스의 부분을 삭제 합니다"
 
-        if self._selectPageId == "":
+        if self._selected_page_id == "":
             raise ValueError("\n페이지 id 값 없음")
 
-        url = f"https://api.notion.com/v1/pages/{self._selectPageId}"
+        url = f"https://api.notion.com/v1/pages/{self._selected_page_id}"
         payload = {
             "archived": True
         }
@@ -195,7 +196,7 @@ class NotionPage(NotionParent, Write, Read):
     def __init__(self, key: str, page_id: str):
         super().__init__(key, page_id)
         self._object = PageObject()
-        self.children: List[dict] = []
+        self.children: list[dict] = []
 
     def write(self):
         url = f"https://api.notion.com/v1/blocks/{self.id}/children"
