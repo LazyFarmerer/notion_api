@@ -23,6 +23,12 @@ class Update(metaclass=ABCMeta):
         raise NotImplementedError
 
 
+class Remove(metaclass=ABCMeta):
+    @abstractmethod
+    def remove(self):
+        raise NotImplementedError
+
+
 class NotionParent:
     def __init__(self, api_key: str, id: str):
         self.api_key = api_key
@@ -87,83 +93,54 @@ class NotionParent:
 
 
 class NotionDataParser:
-    def parse_response(self, data: dict, datas: list[dict], notionObject: NotionObject):
-        "받은 정보를 내가 보기좋게 가공"
-        result = {}
-        result_list = datas
+    def parse_database(self, data: dict, datas: list[dict], notionObject: NotionObject) -> list[dict]:
+        "데이터베이스를 파싱해서 보기좋게 가공"
 
-        if data["object"] == "list":
-            results_datas: list[dict] = data["results"]
-            if results_datas is None:
-                raise ValueError("\n뭐 받음???")
+        if data["object"] != "list":
+            raise ValueError(f"\ndatabase 아님. 아래는 내용\n{data}")
 
-            for item in results_datas:
-                result = {}
-                if item["object"] == "page_or_database":
-                    result = self.__parse_page(item, notionObject)
-                elif item["object"] == "page":
-                    result = self.__parse_page(item, notionObject)
-                elif item["object"] == "block":
-                    result = self.__parse_block(item, notionObject)
-                result_list.append(result)
-            return result_list
+        datas = []
+        results_datas: list[dict] = data["results"]
 
-        elif data["object"] == "page":
-            result = self.__parse_page(data, notionObject)
-            
-            if len(result_list) == 0:
-                result_list.append(result)
-            for index, item in enumerate(result_list):
-                if item["id"] == result["id"]:
-                    result_list[index] = result
-                    return result_list
+        for item in results_datas:
+            result = {"result": {}}
+            result["id"] = item["id"]
+            result["object"] = item["object"]
+            for key, value in item["properties"].items():
+                type_ = value["type"]
+                if hasattr(notionObject, f"get_{type_}"):
+                    result["type"] = type_
+                    result["result"][key] = getattr(notionObject, f"get_{type_}")(value)
+            datas.append(result)
+        return datas
 
-        elif data["object"] == "block":
-            result = self.__parse_block(data, notionObject)
+    def parse_page(self, data: dict, datas: list[dict], notionObject: NotionObject):
+        if data["object"] != "list":
+            raise ValueError(f"\npage 아님. 아래는 내용\n{data}")
 
-            if len(result_list) == 0:
-                result_list.append(result)
-            for index, item in enumerate(result_list):
-                if item["id"] == result["id"]:
-                    result_list[index] = result
-                    return result_list
-
-        raise ValueError(f"\nlist 또는 page 아님. 아래는 내용\n{data}")
-
-    def __parse_block(self, item: dict, notionObject: NotionObject):
-        """
-        parse_response() 메서드 처리하는 과정에서 떼어낸 함수\n
-        일반적으로 내가 호출 X
-        """
-
-        result = {}
-        result["id"] = item["id"]
-        result["object"] = item["object"]
-        type_ = item["type"]
-        result["type"] = type_
-
-        if type_ == "child_page":
-            result["title"] = item[type_]["title"]
-        if type_ == "code":
-            result["language"] = item[type_]["language"]
-
-        if hasattr(notionObject, f"get_{type_}"):
-            result[type_] = getattr(notionObject, f"get_{type_}")(item)
-
-        return result
-
-    def __parse_page(self, item: dict, notionObject: NotionObject):
-        """
-        parse_response() 메서드 처리하는 과정에서 떼어낸 함수\n
-        일반적으로 내가 호출 X
-        """
-
-        result = {}
-        result["id"] = item["id"]
-        result["object"] = item["object"]
-        for key, value in item["properties"].items():
-            type_ = value["type"]
+        datas = []
+        results_datas: list[dict] = data["results"]
+        for item in results_datas:
+            result = {}
+            result["id"] = item["id"]
+            result["object"] = item["object"]
+            type_ = item["type"]
             if hasattr(notionObject, f"get_{type_}"):
-                result[key] = getattr(notionObject, f"get_{type_}")(value)
-            
-        return result
+                result["type"] = type_
+                result[type_] = getattr(notionObject, f"get_{type_}")(item)
+            datas.append(result)
+
+        return datas
+
+    def parse_block(self, data: dict, datas: list[dict], notionObject: NotionObject):
+        if data["object"] != "block":
+            raise ValueError(f"\nblock 아님. 아래는 내용\n{data}")
+
+        result = {}
+        result["id"] = data["id"]
+        result["object"] = data["object"]
+        type_ = data["type"]
+        if hasattr(notionObject, f"get_{type_}"):
+            result["type"] = type_
+            result[type_] = getattr(notionObject, f"get_{type_}")(data)
+        return [result]

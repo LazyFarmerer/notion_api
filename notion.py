@@ -1,44 +1,56 @@
 from typing import Optional
-import json
 import requests
 
-from .parent.parent import NotionParent, Read, Write, Update
+from .parent.parent import NotionParent, Read, Write, Update, Remove
 from .notion_object.notion_object import DatabaseObject, PageObject, BlockObject
 
 
 class Notion:
+    """
+    ### Notion 클래스
+    database - 데이터베이스 실행을 위한 클래스
+    page - 페이지 실행을 위한 클래스
+    block - 블록 실행을 위한 클래스
+
+    parameter
+            api_key: 노션 api 키
+            database_id: 노션 데이터베이스 id
+    """
     @classmethod
     def database(cls, api_key: str, database_id: str):
+        """
+        ```
+        write()              # 새로운 데이터 작성
+        read()               # 기존 데이터들 불러오기
+        update()             # 선택한 속성 업데이트
+        remove()             # 선택한 속성 삭제
+        find_page_id()       # 특정 속성 선택
+        update_properties()  # 속성 이름 바꾸거나 지우기. 쓰일 일 없을놈
+        ```
+        """
         return NotionDatabase(api_key, database_id)
     @classmethod
     def page(cls, api_key: str, page_id: str):
+        """
+        ```
+        write()              # 새로운 데이터 작성
+        read()               # 기존 데이터들 불러오기
+        ```
+        """
         return NotionPage(api_key, page_id)
     @classmethod
     def block(cls, api_key: str, block_id: str):
+        """
+        ```
+        read()               # 기존 데이터들 불러오기
+        update()             # 선택한 속성 업데이트
+        remove()             # 선택한 속성 삭제
+        ```
+        """
         return NotionBlock(api_key, block_id)
 
 
-class NotionDatabase(NotionParent, Write, Read, Update):
-    """
-    ### Notion 클래스
-    노션의 DB 실행을 위한 클래스
-
-    메서드 종류
-    ```
-    load()               # 기존 데이터들 불러오기
-    write()              # 새로운 데이터 작성
-    find_page_id()       # 특정 속성 선택
-    update_page()        # 선택한 속성 업데이트
-    update_properties()  # 속성 이름 바꾸거나 지우기. 쓰일 일 없을놈
-
-    "데이터 작성 또는 업데이트 시 사용하는 메서드"
-    title(), date(), text(), number(), select(), checkbox(), email(), phone_number()
-    ```
-
-    ### Notion.Option() 클래스
-    load() 메서드 사용 시 sorts, filter 사용하기 위한 옵션 클래스
-    """
-
+class NotionDatabase(NotionParent, Write, Read, Update, Remove):
     def __init__(self, key: str, DB_id: str):
         super().__init__(key, DB_id)
         self._object = DatabaseObject()
@@ -57,8 +69,7 @@ class NotionDatabase(NotionParent, Write, Read, Update):
             payload["filter"] = filter_
 
         response = requests.post(url, json=payload, headers=headers)
-        # print(response.text)
-        self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
+        self.datas = self._data_parser.parse_database(response.json(), self.datas, self._object)
         return self
 
     def write(self):
@@ -69,7 +80,7 @@ class NotionDatabase(NotionParent, Write, Read, Update):
         self.payload["parent"] = {"database_id": self.id}
 
         response = requests.post(url, json=self.payload, headers=headers)
-        self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
+        self.datas = self._data_parser.parse_database(response.json(), self.datas, self._object)
         return self
 
     def find_page_id(self, properties: str="", name: str = "", id_:str=""):
@@ -116,7 +127,7 @@ class NotionDatabase(NotionParent, Write, Read, Update):
             }
         }
         response = requests.patch(url, json=payload, headers=headers)
-        self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
+        self.datas = self._data_parser.parse_database(response.json(), self.datas, self._object)
         return self
 
     def update(self):
@@ -131,7 +142,7 @@ class NotionDatabase(NotionParent, Write, Read, Update):
         payload = self.payload
 
         response = requests.patch(url, json=payload, headers=headers)
-        self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
+        self.datas = self._data_parser.parse_database(response.json(), self.datas, self._object)
         return self
 
     def remove(self):
@@ -147,7 +158,7 @@ class NotionDatabase(NotionParent, Write, Read, Update):
         headers = self._add_headers("2022-06-28")
 
         response = requests.patch(url, json=payload, headers=headers)
-        self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
+        self.datas = self._data_parser.parse_database(response.json(), self.datas, self._object)
         return self
 
     def title(self, propertiesName: str, value: Optional[str]):
@@ -207,7 +218,7 @@ class NotionPage(NotionParent, Write, Read):
         }
 
         response = requests.patch(url, headers=headers, json=data)
-        self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
+        self.datas = self._data_parser.parse_page(response.json(), self.datas, self._object)
         return self
 
     def read(self):
@@ -215,7 +226,8 @@ class NotionPage(NotionParent, Write, Read):
         headers = self._add_headers("2022-06-28")
 
         response = requests.get(url, headers=headers)
-        self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
+        self.datas = self._data_parser.parse_page(response.json(), self.datas, self._object)
+        # self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
         return self
 
     def text(self, value: Optional[str]):
@@ -251,7 +263,7 @@ class NotionPage(NotionParent, Write, Read):
         return self
 
 
-class NotionBlock(NotionParent, Read, Update):
+class NotionBlock(NotionParent, Read, Update, Remove):
     def __init__(self, key: str, block_id: str):
         super().__init__(key, block_id)
         self._object = BlockObject()
@@ -262,7 +274,7 @@ class NotionBlock(NotionParent, Read, Update):
         headers = self._add_headers("2022-06-28")
 
         response = requests.patch(url, headers=headers)
-        self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
+        self.datas = self._data_parser.parse_block(response.json(), self.datas, self._object)
         return self
 
     def update(self):
@@ -273,7 +285,18 @@ class NotionBlock(NotionParent, Read, Update):
         data = self.payload
 
         response = requests.patch(url, headers=headers, json=data)
-        self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
+        self.datas = self._data_parser.parse_block(response.json(), self.datas, self._object)
+        return self
+
+    def remove(self):
+        url = f"https://api.notion.com/v1/blocks/{self.id}"
+        payload = {
+            "archived": True
+        }
+        headers = self._add_headers("2022-06-28")
+
+        response = requests.patch(url, json=payload, headers=headers)
+        self.datas = self._data_parser.parse_database(response.json(), self.datas, self._object)
         return self
 
     def text(self, value: Optional[str]):

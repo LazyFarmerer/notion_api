@@ -149,11 +149,14 @@ class Code(NotionObject):
         "code"
         return Text().text(value)
 
-    def get_code(self, value: dict) -> Optional[str]:
+    def get_code(self, value: dict) -> Optional[dict]:
         type_ = value["type"]
         if len(value[type_]["rich_text"]) == 0:
             return None
-        return value[type_]["rich_text"][0]["plain_text"]
+        return {
+            "code": value[type_]["rich_text"][0]["plain_text"],
+            "language": value[type_]["language"]
+        }
         # return Text().get_text(value[type_])
 
 
