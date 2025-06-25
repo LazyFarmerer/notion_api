@@ -22,21 +22,22 @@ class Title(NotionObject):
 
 
 class Date(NotionObject):
-    def date(self, value: Optional[str]) -> dict:
+    def date(self, start: Optional[str], end: Optional[str]) -> dict:
         "날짜 ex)'2022-08-08'"
         payload = {}
-        if isinstance(value, str):
-            payload = { "date": { "start": value }, "type": "date" }
-        elif value is None:
+        if isinstance(start, str):
+            payload = { "date": { "start": start, "end": end }, "type": "date" }
+        elif start is None:
             payload = { "date": None, "type": "date" }
         return payload
 
     def get_date(self, value: dict) -> Union[str, dict, None]:
         if value["date"] is None:
             return None
-        if value["date"].get("end"):
-            return value["date"]
-        return value["date"]["start"]
+        return {
+            "start": value["date"]["start"],
+            "end": value["date"]["end"]
+        }
 
 
 class Text(NotionObject):

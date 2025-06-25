@@ -34,6 +34,7 @@ class NotionParent:
         self.api_key = api_key
         self.id = id
         self.datas: list[dict] = []
+        self.original_data: dict
 
         self._data_parser = NotionDataParser()
 
@@ -109,7 +110,7 @@ class NotionDataParser:
             for key, value in item["properties"].items():
                 type_ = value["type"]
                 if hasattr(notionObject, f"get_{type_}"):
-                    result["type"] = type_
+                    # result["type"] = type_
                     result["result"][key] = getattr(notionObject, f"get_{type_}")(value)
             datas.append(result)
         return datas

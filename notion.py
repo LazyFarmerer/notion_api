@@ -69,6 +69,7 @@ class NotionDatabase(NotionParent, Write, Read, Update, Remove):
             payload["filter"] = filter_
 
         response = requests.post(url, json=payload, headers=headers)
+        self.original_data = response.json()
         self.datas = self._data_parser.parse_database(response.json(), self.datas, self._object)
         return self
 
@@ -80,6 +81,7 @@ class NotionDatabase(NotionParent, Write, Read, Update, Remove):
         self.payload["parent"] = {"database_id": self.id}
 
         response = requests.post(url, json=self.payload, headers=headers)
+        self.original_data = response.json()
         self.datas = self._data_parser.parse_database(response.json(), self.datas, self._object)
         return self
 
@@ -142,6 +144,7 @@ class NotionDatabase(NotionParent, Write, Read, Update, Remove):
         payload = self.payload
 
         response = requests.patch(url, json=payload, headers=headers)
+        self.original_data = response.json()
         self.datas = self._data_parser.parse_database(response.json(), self.datas, self._object)
         return self
 
@@ -158,6 +161,7 @@ class NotionDatabase(NotionParent, Write, Read, Update, Remove):
         headers = self._add_headers("2022-06-28")
 
         response = requests.patch(url, json=payload, headers=headers)
+        self.original_data = response.json()
         self.datas = self._data_parser.parse_database(response.json(), self.datas, self._object)
         return self
 
@@ -166,9 +170,12 @@ class NotionDatabase(NotionParent, Write, Read, Update, Remove):
         payload = self._object.title(value)
         self.payload["properties"][propertiesName] = payload
         return self
-    def date(self, propertiesName: str, value: Optional[str]):
-        "날짜 ex)'2022-08-08'"
-        payload = self._object.date(value)
+    def date(self, propertiesName: str, start: Optional[str], end: Optional[str] = None):
+        """
+        날짜 ex)'2022-08-08' 아니면 '2022-08-08T09:45' 이런식으로\n
+        end 날짜 똑같음
+        """
+        payload = self._object.date(start, end)
         self.payload["properties"][propertiesName] = payload
         return self
     def text(self, propertiesName: str, value: Optional[str]):
@@ -218,6 +225,7 @@ class NotionPage(NotionParent, Write, Read):
         }
 
         response = requests.patch(url, headers=headers, json=data)
+        self.original_data = response.json()
         self.datas = self._data_parser.parse_page(response.json(), self.datas, self._object)
         return self
 
@@ -226,6 +234,7 @@ class NotionPage(NotionParent, Write, Read):
         headers = self._add_headers("2022-06-28")
 
         response = requests.get(url, headers=headers)
+        self.original_data = response.json()
         self.datas = self._data_parser.parse_page(response.json(), self.datas, self._object)
         # self.datas = self._data_parser.parse_response(response.json(), self.datas, self._object)
         return self
@@ -274,6 +283,7 @@ class NotionBlock(NotionParent, Read, Update, Remove):
         headers = self._add_headers("2022-06-28")
 
         response = requests.patch(url, headers=headers)
+        self.original_data = response.json()
         self.datas = self._data_parser.parse_block(response.json(), self.datas, self._object)
         return self
 
@@ -285,6 +295,7 @@ class NotionBlock(NotionParent, Read, Update, Remove):
         data = self.payload
 
         response = requests.patch(url, headers=headers, json=data)
+        self.original_data = response.json()
         self.datas = self._data_parser.parse_block(response.json(), self.datas, self._object)
         return self
 
@@ -296,6 +307,7 @@ class NotionBlock(NotionParent, Read, Update, Remove):
         headers = self._add_headers("2022-06-28")
 
         response = requests.patch(url, json=payload, headers=headers)
+        self.original_data = response.json()
         self.datas = self._data_parser.parse_database(response.json(), self.datas, self._object)
         return self
 
