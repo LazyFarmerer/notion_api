@@ -282,7 +282,7 @@ class NotionBlock(NotionParent, Read, Update, Remove):
         url = f"https://api.notion.com/v1/blocks/{self.id}"
         headers = self._add_headers("2022-06-28")
 
-        response = requests.patch(url, headers=headers)
+        response = requests.get(url, headers=headers)
         self.original_data = response.json()
         self.datas = self._data_parser.parse_block(response.json(), self.datas, self._object)
         return self
