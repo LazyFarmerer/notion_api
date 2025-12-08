@@ -1,4 +1,16 @@
 
 
 from .res.notion import NotionDatabase, DataSource, DatabasePage
-from .res.notion_object.notion_object import NotionObjec
+from .res.notion_object.notion_object import NotionObject
+from .res.notion_database_lite import NotionDatabaseLite
+from .res.notion_object.database_query import Filter, Sort
+
+__all__ = [
+    "NotionDatabase",
+    "DataSource",
+    "DatabasePage",
+    "NotionObject",
+    "NotionDatabaseLite",
+    "Filter",
+    "Sort",
+]

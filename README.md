@@ -3,8 +3,14 @@
 
 노션 api 버전 2025-09-03 버전으로 변경
 
->**데이터베이스**<br>
->1. 데이터베이스
+> **데이터베이스 라이트버전**
+> - 쓰기: 페이지 생성
+> - 읽기: 페이지 가져오기
+> - 업데이트: 페이지 정보 업데이트
+> - 지우기: 페이지 지우기
+
+> **데이터베이스**
+> 1. 데이터베이스
 >    - 쓰기: 페이지 생성(데이터소스가 둘 이상이면 작동 안함)
 >    - 읽기: 데이터 소스 가져오기
 >2. 데이터 소스
@@ -19,6 +25,30 @@
 >**블럭**<br>
 >곧 만들기
 
+## 데이터베이스 라이트버전
+
+```python
+from notion import NotionDatabaseLite
+from notion import NotionObject, Filter, Sort
+
+api_key = "<<api_key>>"
+database_id = "<<database_id>>"
+notion = NotionDatabaseLite(api_key, database_id)
+
+# 데이터소스 가져오기
+notion.read()
+# 데이터소스 리스트
+notion.value
+# 페이지 쓰기
+notion..write(
+    NotionObjec()
+    .title("제목", "치킨")
+    .number("가격", 10000)
+    .date("날짜", "2025-09-03")
+)
+
+```
+
 ## 데이터베이스
 
 | 제목 |    날짜    |  가격 | 
@@ -26,6 +56,8 @@
 | 피자 | 2020-10-10 | 15000 |
 
 ```python
+from notion import NotionDatabase, DataSource, DatabasePage, NotionObject
+
 api_key = "<<api_key>>"
 database_id = "<<database_id>>"
 notion = NotionDatabase(api_key, database_id)
@@ -80,7 +112,22 @@ page.remove()
 |------------|------------|-------|
 |    피자    | 2020-10-10 | 15000 |
 
+## 페이지 쿼리
 
+```python
+api_key = "<<api_key>>"
+database_id = "<<database_id>>"
+notion = NotionDatabaseLite(api_key, database_id)
+
+notion.read(
+    filter_=Filter.or_(
+        Filter.richText.equals("텍스트", "글자"),
+        Filter.richText.equals("텍스트", "두글자"),
+        Filter.richText.equals("텍스트", "네글자")
+    ),
+    sort=Sort.sort("날짜", "ascending")
+)
+```
 -----
 ## 이전 버젼
 

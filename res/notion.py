@@ -5,18 +5,18 @@ import requests
 
 from .abstract.parent import NotionBase
 from .abstract.interface import Write, Read, Update, Remove
-from .notion_object.notion_object import NotionObjec
+from .notion_object.notion_object import NotionObject
 from .notion_object.notion_object_base import notion_object_instance_register
 
 
 class NotionDatabase(NotionBase, Write, Read):
     @override
     def __init__(self, api_key: str, DB_id: str):
-        super().__init__(api_key, DB_id)
+        super().__init__(api_key, DB_id, "database")
         self._data_sources: list[DataSource] = []
 
     @override
-    def write(self, write_properties_object_: NotionObjec):
+    def write(self, write_properties_object_: NotionObject):
         url = "https://api.notion.com/v1/pages"
         headers = self._add_headers("2025-09-03")
         # update_properties = write_properties_object_.value
@@ -49,7 +49,7 @@ class NotionDatabase(NotionBase, Write, Read):
         data_sources: list = response_data["data_sources"]
         result = []
         for data in data_sources:
-            data_source = parse_data_sources(self.api_key, data)
+            data_source = _parse_data_sources(self.api_key, data)
             result.append(data_source)
         return result
 
@@ -72,8 +72,8 @@ class NotionDatabase(NotionBase, Write, Read):
 
 class DataSource(NotionBase, Read):
     @override
-    def __init__(self, api_key: str, source_id: str, name: str) -> None:
-        super().__init__(api_key, source_id)
+    def __init__(self, api_key: str, source_id: str, object: str, name: str) -> None:
+        super().__init__(api_key, source_id, object)
         self.name = name
         self._data: list[DatabasePage] = []
 
@@ -97,7 +97,7 @@ class DataSource(NotionBase, Read):
         results: list = response_data["results"]
         result = []
         for data in results:
-            database_page = parser_page(self.api_key, data)
+            database_page = _parser_page(self.api_key, data)
             result.append(database_page)
         return result
 
@@ -116,13 +116,13 @@ class DataSource(NotionBase, Read):
 
 class DatabasePage(NotionBase, Update, Remove):
     @override
-    def __init__(self, api_key: str, id: str, values: dict[str, Any], types: dict[str, str]):
-        super().__init__(api_key, id)
+    def __init__(self, api_key: str, id: str, object: str, values: dict[str, Any], types: dict[str, str]):
+        super().__init__(api_key, id, object)
         self._values = values
         self._types = types
 
     @override
-    def update(self, update_properties_object: NotionObjec) -> DatabasePage:
+    def update(self, update_properties_object: NotionObject) -> DatabasePage:
         url = f"https://api.notion.com/v1/pages/{self.id}"
         headers = self._add_headers("2025-09-03")
         update_properties = update_properties_object.value
@@ -135,9 +135,9 @@ class DatabasePage(NotionBase, Update, Remove):
 
         response = requests.patch(url, json=payload, headers=headers)
         if not response.ok:
-            raise ValueError("업데이트 오류!, 업데이트 요소와 값 확인!")
+            raise ValueError(response.json())
 
-        new_page = parser_page(self.api_key, response.json())
+        new_page = _parser_page(self.api_key, response.json())
         # 업데이트
         self._values = new_page._values
         self._types = new_page._types
@@ -168,12 +168,13 @@ class DatabasePage(NotionBase, Update, Remove):
         return f"{{페이지: {",".join(result)}}}"
 
 
-def parse_data_sources(api_key: str, data: dict) -> DataSource:
-    return DataSource(api_key, data["id"], data["name"])
+def _parse_data_sources(api_key: str, data: dict) -> DataSource:
+    return DataSource(api_key, data["id"], data["object"], data["name"])
 
 
-def parser_page(api_key: str, data: dict) -> DatabasePage:
+def _parser_page(api_key: str, data: dict) -> DatabasePage:
     _id = data["id"]
+    _object = data["object"]
     values = {}
     types = {}
     properties: dict = data["properties"]
@@ -183,7 +184,7 @@ def parser_page(api_key: str, data: dict) -> DatabasePage:
         # 키 타입에 맞는 클래스꺼내고 .get(value) 가져와서 넣기
         values[key] = notion_object_instance_register.dict[_type].get(value)
         types[key] = _type
-    return DatabasePage(api_key, _id, values, types)
+    return DatabasePage(api_key, _id, _object, values, types)
 
 
 

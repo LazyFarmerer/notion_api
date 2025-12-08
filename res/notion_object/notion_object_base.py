@@ -139,7 +139,7 @@ class Checkbox(NotionObjectBase):
         """체크박스"""
         return { "checkbox": value, "type": "checkbox" }
 
-    def get_checkbox(self, value: dict) -> bool:
+    def get(self, value: dict) -> bool:
         return value["checkbox"]
 
 @notion_object_instance_register("email")
@@ -148,7 +148,7 @@ class Email(NotionObjectBase):
         """이메일"""
         return { "email": value, "type": "email" }
 
-    def get_email(self, value: dict) -> str | None:
+    def get(self, value: dict) -> str | None:
         return value["email"]
 
 @notion_object_instance_register("phone_number")
@@ -157,7 +157,7 @@ class Phone_number(NotionObjectBase):
         """전화번호 그런데 아무거나 다 적히긴 함"""
         return { "phone_number": value, "type": "phone_number" }
 
-    def get_phone_number(self, value: dict) -> str | None:
+    def get(self, value: dict) -> str | None:
         return value["phone_number"]
 
 @notion_object_instance_register("url")
@@ -166,7 +166,7 @@ class Url(NotionObjectBase):
         """URL"""
         return { "url": value, "type": "url" }
 
-    def get_url(self, value: dict) -> str | None:
+    def get(self, value: dict) -> str | None:
         return value["url"]
 
 @notion_object_instance_register("bookmark")
@@ -176,7 +176,7 @@ class Bookmark(NotionObjectBase):
         # 북마크에 url 타입 있으면 안댐 { "url": value, "type": "url" } 이렇게 안댐
         return { "url": value }
 
-    def get_bookmark(self, value: dict) -> str | None:
+    def get(self, value: dict) -> str | None:
         return value["bookmark"]["url"]
 
 @notion_object_instance_register("code")
@@ -185,7 +185,7 @@ class Code(NotionObjectBase):
         """code"""
         return Text().object(value)
 
-    def get_code(self, value: dict) -> dict | None:
+    def get(self, value: dict) -> dict | None:
         type_ = value["type"]
         if len(value[type_]["rich_text"]) == 0:
             return None
