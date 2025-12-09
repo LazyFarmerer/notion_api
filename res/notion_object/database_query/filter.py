@@ -1,8 +1,7 @@
 
 
 from typing import Any, Literal
-import sys
-
+import sys, re
 
 def _return_value(property_: str, filter_name: str, field: str, value: Any) -> dict:
     return {
@@ -10,19 +9,26 @@ def _return_value(property_: str, filter_name: str, field: str, value: Any) -> d
         filter_name: { field: value }
     }
 
+def _camel_to_snake(name):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
 
 class FilterBase:
-    _filter_name: str
     def __init__(self, value: dict | None = None) -> None:
+        class_name = self.__class__.__name__.replace("Filter", "")
+        self._filter_name = _camel_to_snake(class_name)
+
         if value is None:
-            self.value = {}
+            self._value = {}
             return
+        self._value = value
 
-        self.value = value
-
+    @property
+    def value(self):
+        return self._value
 
 class CheckboxFilter(FilterBase):
-    _filter_name = "checkbox"
     def equals(self, property_: str, value: bool):
         """속성 값이 제공된 값과 정확히 일치하는지 여부를 나타냅니다.
 
@@ -39,7 +45,6 @@ class CheckboxFilter(FilterBase):
 
 
 class DateFilter(FilterBase):
-    _filter_name = "date"
     def after(self, property_: str, value: str):
         """날짜 속성 값과 비교할 값입니다.
 
@@ -136,7 +141,6 @@ class DateFilter(FilterBase):
 
 
 class FilesFilter(FilterBase):
-    _filter_name = "files"
     def is_empty(self, property_: str):
         """파일 속성 값에 데이터가 포함되어 있지 않은지 여부를 나타냅니다.
 
@@ -153,7 +157,6 @@ class FilesFilter(FilterBase):
 
 
 class FormulaFilter(FilterBase):
-    _filter_name = "formula"
     def checkbox(self, property_: str, value: CheckboxFilter):
         """수식 결과를 비교할 체크박스 필터 조건입니다.
 
@@ -188,7 +191,6 @@ class FormulaFilter(FilterBase):
 
 
 class MultiSelectFilter(FilterBase):
-    _filter_name = "multi_select"
     def contains(self, property_: str, value: str):
         """다중 선택 속성 값을 비교할 값입니다.
 
@@ -219,7 +221,6 @@ class MultiSelectFilter(FilterBase):
 
 
 class NumberFilter(FilterBase):
-    _filter_name = "number"
     def does_not_equal(self, property_: str, value: float):
         """숫자 속성 값을 비교할 입니다.
 
@@ -278,7 +279,6 @@ class NumberFilter(FilterBase):
 
 
 class PeopleFilter(FilterBase):
-    _filter_name = "people"
     def contains(self, property_: str, value: str): # UUIDv4 ex) "6c574cee-ca68-41c8-86e0-1b9e992689fb"
         """people 속성 값과 비교할 값입니다.
 
@@ -309,7 +309,6 @@ class PeopleFilter(FilterBase):
 
 
 class RelationFilter(FilterBase):
-    _filter_name = "relation"
     def contains(self, property_: str, value: str): # UUIDv4 ex) "6c574cee-ca68-41c8-86e0-1b9e992689fb"
         """관계 속성 값과 비교할 값입니다.
 
@@ -340,7 +339,6 @@ class RelationFilter(FilterBase):
 
 
 class RichTextFilter(FilterBase):
-    _filter_name = "rich_text"
     def contains(self, property_: str, value: str):
         """텍스트 속성 값을 비교할 대상입니다.
 
@@ -397,12 +395,10 @@ class RichTextFilter(FilterBase):
 
 
 class RollupFilter(FilterBase):
-    _filter_name = "rollup"
     pass # 일단 패스
 
 
 class SelectFilter(FilterBase):
-    _filter_name = "select"
     def equals(self, property_: str, value: str):
         """select 속성 값을 비교할 대상입니다.
 
@@ -433,7 +429,6 @@ class SelectFilter(FilterBase):
 
 
 class StatusFilter(FilterBase):
-    _filter_name = "status"
     def equals(self, property_: str, value: str):
         """상태 속성 값을 비교할 문자열입니다.
 
@@ -464,7 +459,6 @@ class StatusFilter(FilterBase):
 
 
 class TimestampFilter(FilterBase):
-    _filter_name = "timestamp"
     pass
 # 얘 혼자 이상함 남들 전부 property 쓸 때 얘는 timestamp 씀
 # {
@@ -478,7 +472,6 @@ class TimestampFilter(FilterBase):
 
 
 class VerificationFilter(FilterBase):
-    _filter_name = "verification"
     def status(self, property_: str, value: Literal["verified", "expired", None]):
         """쿼리 중인 확인 상태입니다. 유효한 옵션은 다음과 같습니다.
 
@@ -487,7 +480,6 @@ class VerificationFilter(FilterBase):
         return VerificationFilter(_return_value(property_, self._filter_name, method_name, value))
 
 class IDFilter(FilterBase):
-    _filter_name = "verification"
     def does_not_equal(self, property_: str, value: float):
         """unique_id 속성 값과 비교할 값입니다.
 

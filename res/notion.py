@@ -11,18 +11,18 @@ from .notion_object.notion_object_base import notion_object_instance_register
 
 class NotionDatabase(NotionBase, Write, Read):
     @override
-    def __init__(self, api_key: str, DB_id: str):
-        super().__init__(api_key, DB_id, "database")
+    def __init__(self, api_key: str, DB_id: str, object: str="database"):
+        super().__init__(api_key, DB_id, object)
         self._data_sources: list[DataSource] = []
 
     @override
-    def write(self, write_properties_object_: NotionObject):
+    def write(self, properties_object: NotionObject):
         url = "https://api.notion.com/v1/pages"
         headers = self._add_headers("2025-09-03")
-        # update_properties = write_properties_object_.value
+
         payload = {
             "parent": { "database_id": self.id },
-            "properties": write_properties_object_.value
+            "properties": properties_object.value
         }
 
         response = requests.post(url, json=payload, headers=headers)
@@ -168,6 +168,66 @@ class DatabasePage(NotionBase, Update, Remove):
         return f"{{페이지: {",".join(result)}}}"
 
 
+class NotionPage(NotionBase, Write, Read):
+    @override
+    def __init__(self, key: str, page_id: str, object: str="page"):
+        super().__init__(key, page_id, object)
+        self._blocks: list[NotionBlock] = []
+
+    @override
+    def write(self, properties_object: NotionObject, *args: NotionObject):
+        url = f"https://api.notion.com/v1/blocks/{self.id}/children"
+        headers = self._add_headers("2025-09-03")
+
+        notion_objects = [ properties_object.value ]
+        notion_objects.extend( [ notion_obj.value for notion_obj in args ] )
+        payload = {
+            "children": notion_objects
+        }
+
+        response = requests.patch(url, json=payload, headers=headers)
+        print(response.json())
+        notion_blocks = self._parse(response.json())
+        self._blocks.extend(notion_blocks)
+
+    @override
+    def read(self):
+        url = f"https://api.notion.com/v1/blocks/{self.id}/children?page_size=100"
+        headers = self._add_headers("2022-06-28")
+
+        response = requests.get(url, headers=headers)
+        self._blocks = self._parse(response.json())
+        return response
+
+    def _parse(self, response_data: dict) -> list[NotionBlock]:
+        _blocks_data: list = response_data["results"]
+        result: list[NotionBlock] = []
+        for block_data in _blocks_data:
+            notion_block = _parser_block(self.api_key, block_data)
+            print(notion_block)
+            result.append(notion_block)
+        return result
+
+
+class NotionBlock(NotionBase, Update, Remove):
+    @override
+    def __init__(self, key: str, page_id: str, object: str="block", value: dict | None=None):
+        super().__init__(key, page_id, object)
+        self._type = type
+        if value is None:
+            self._value = {}
+            return
+        self._value = value
+
+    @override
+    def update(self):
+        return super().update()
+
+    @override
+    def remove(self) -> bool:
+        return super().remove()
+
+
 def _parse_data_sources(api_key: str, data: dict) -> DataSource:
     return DataSource(api_key, data["id"], data["object"], data["name"])
 
@@ -187,5 +247,21 @@ def _parser_page(api_key: str, data: dict) -> DatabasePage:
     return DatabasePage(api_key, _id, _object, values, types)
 
 
+def _parser_block(api_key: str, data: dict) -> NotionBlock:
+    _id: str = data["id"]
+    _object: str = data["object"]
+    _type: str = data["type"]
+    notiono_bject_class = notion_object_instance_register.dict.get(_type)
+    # 있으면 있는대로, 없으면 None
+    if notiono_bject_class is None:
+        _data = None
+    else:
+        _data = notiono_bject_class.get( data )
+
+    _value = {
+        "type": _type,
+        _type: _data
+    }
+    return NotionBlock(api_key, _id, _object, _value)
 
 

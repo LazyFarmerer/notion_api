@@ -78,7 +78,7 @@ class RichTextObject(NotionObjectBase):
 class ParagraphObject(NotionObjectBase):
     def object(self, value: str | None) -> dict:
         return TextObject().object(value)
-    def get_paragraph(self, value: dict) -> str | None:
+    def get(self, value: dict) -> str | None:
         return Heading3Object().get(value)
 
 @notion_object_instance_register("heading1")
