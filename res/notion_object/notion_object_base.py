@@ -14,7 +14,7 @@ notion_object_instance_register = InstanceRegister[str, NotionObjectBase] ()
 
 
 @notion_object_instance_register("title")
-class Title(NotionObjectBase):
+class TitleObject(NotionObjectBase):
     def object(self, value: str | None) -> dict:
         """타이틀"""
         payload = {}
@@ -31,7 +31,7 @@ class Title(NotionObjectBase):
 
 
 @notion_object_instance_register("date")
-class Date(NotionObjectBase):
+class DateObject(NotionObjectBase):
     def object(self, start: str | None, end: str | None) -> dict:
         """날짜 ex)'2022-08-08'"""
         payload = {}
@@ -50,7 +50,7 @@ class Date(NotionObjectBase):
         }
 
 @notion_object_instance_register("text")
-class Text(NotionObjectBase):
+class TextObject(NotionObjectBase):
     def object(self, value: str | None) -> dict:
         """텍스트"""
         payload = {}
@@ -68,47 +68,47 @@ class Text(NotionObjectBase):
 
 
 @notion_object_instance_register("rich_text")
-class RichText(NotionObjectBase):
+class RichTextObject(NotionObjectBase):
     def object(self, value: str | None) -> dict:
-        return Text().object(value)
+        return TextObject().object(value)
     def get(self, value: dict) -> str | None:
-        return Text().get(value)
+        return TextObject().get(value)
 
 @notion_object_instance_register("paragraph")
-class Paragraph(NotionObjectBase):
+class ParagraphObject(NotionObjectBase):
     def object(self, value: str | None) -> dict:
-        return Text().object(value)
+        return TextObject().object(value)
     def get_paragraph(self, value: dict) -> str | None:
-        return Heading3().get(value)
+        return Heading3Object().get(value)
 
 @notion_object_instance_register("heading1")
-class Heading1(NotionObjectBase):
+class Heading1Object(NotionObjectBase):
     def object(self, value: str | None) -> dict:
-        return Text().object(value)
+        return TextObject().object(value)
     def get(self, value: dict) -> str | None:
-        return Heading3().get(value)
+        return Heading3Object().get(value)
 
 @notion_object_instance_register("heading2")
-class Heading2(NotionObjectBase):
+class Heading2Object(NotionObjectBase):
     def object(self, value: str | None) -> dict:
-        return Text().object(value)
+        return TextObject().object(value)
     def get(self, value: dict) -> str | None:
-        return Heading3().get(value)
+        return Heading3Object().get(value)
 
 @notion_object_instance_register("heading3")
-class Heading3(NotionObjectBase):
+class Heading3Object(NotionObjectBase):
     def object(self, value: str | None) -> dict:
-        return Text().object(value)
+        return TextObject().object(value)
     def get(self, value: dict) -> str | None:
         type_ = value["type"]
         if len(value[type_]) == 0:
             return None
         value[type_] = value[type_]["rich_text"]
-        return Text().get(value)
+        return TextObject().get(value)
 
 
 @notion_object_instance_register("number")
-class Number(NotionObjectBase):
+class NumberObject(NotionObjectBase):
     def object(self, value: float | None) -> dict:
         """숫자"""
         return { "number": value, "type": "number" }
@@ -118,7 +118,7 @@ class Number(NotionObjectBase):
 
 
 @notion_object_instance_register("select")
-class Select(NotionObjectBase):
+class SelectObject(NotionObjectBase):
     def object(self, value: str | None) -> dict:
         """선택"""
         payload = {}
@@ -134,7 +134,7 @@ class Select(NotionObjectBase):
         return value["select"]["name"]
 
 @notion_object_instance_register("checkbox")
-class Checkbox(NotionObjectBase):
+class CheckboxObject(NotionObjectBase):
     def object(self, value: bool) -> dict:
         """체크박스"""
         return { "checkbox": value, "type": "checkbox" }
@@ -143,7 +143,7 @@ class Checkbox(NotionObjectBase):
         return value["checkbox"]
 
 @notion_object_instance_register("email")
-class Email(NotionObjectBase):
+class EmailObject(NotionObjectBase):
     def object(self, value: str | None):
         """이메일"""
         return { "email": value, "type": "email" }
@@ -152,7 +152,7 @@ class Email(NotionObjectBase):
         return value["email"]
 
 @notion_object_instance_register("phone_number")
-class Phone_number(NotionObjectBase):
+class Phone_numberObject(NotionObjectBase):
     def object(self, value: str | None) -> dict:
         """전화번호 그런데 아무거나 다 적히긴 함"""
         return { "phone_number": value, "type": "phone_number" }
@@ -161,7 +161,7 @@ class Phone_number(NotionObjectBase):
         return value["phone_number"]
 
 @notion_object_instance_register("url")
-class Url(NotionObjectBase):
+class UrlObject(NotionObjectBase):
     def object(self, value: str | None) -> dict:
         """URL"""
         return { "url": value, "type": "url" }
@@ -170,7 +170,7 @@ class Url(NotionObjectBase):
         return value["url"]
 
 @notion_object_instance_register("bookmark")
-class Bookmark(NotionObjectBase):
+class BookmarkObject(NotionObjectBase):
     def object(self, value: str | None) -> dict:
         """bookmark"""
         # 북마크에 url 타입 있으면 안댐 { "url": value, "type": "url" } 이렇게 안댐
@@ -180,10 +180,10 @@ class Bookmark(NotionObjectBase):
         return value["bookmark"]["url"]
 
 @notion_object_instance_register("code")
-class Code(NotionObjectBase):
+class CodeObject(NotionObjectBase):
     def object(self, value: str | None) -> dict:
         """code"""
-        return Text().object(value)
+        return TextObject().object(value)
 
     def get(self, value: dict) -> dict | None:
         type_ = value["type"]
@@ -197,7 +197,7 @@ class Code(NotionObjectBase):
 
 
 @notion_object_instance_register("file")
-class File(NotionObjectBase):
+class FileObject(NotionObjectBase):
     """파일은 노션 api 로 올릴 수 없음!"""
     def object(self, value: dict | None) -> dict:
         raise NotImplementedError("노션 api 에서 파일 못올림!!!.")
@@ -213,7 +213,7 @@ class File(NotionObjectBase):
 
 
 @notion_object_instance_register("files")
-class Files(NotionObjectBase):
+class FilesObject(NotionObjectBase):
     """파일은 노션 api 로 올릴 수 없음!"""
     def object(self, value: dict | None) -> dict:
         raise NotImplementedError("노션 api 에서 파일 못올림!!!.")
