@@ -1,27 +1,27 @@
 
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 
-class Read(metaclass=ABCMeta):
+class Read(ABC):
     @abstractmethod
     def read(self):
         raise NotImplementedError
 
 
-class Write(metaclass=ABCMeta):
+class Write(ABC):
     @abstractmethod
     def write(self):
         raise NotImplementedError
 
 
-class Update(metaclass=ABCMeta):
+class Update(ABC):
     @abstractmethod
     def update(self):
         raise NotImplementedError
 
 
-class Remove(metaclass=ABCMeta):
+class Remove(ABC):
     @abstractmethod
     def remove(self) -> bool:
         raise NotImplementedError
