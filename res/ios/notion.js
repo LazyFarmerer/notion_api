@@ -3,7 +3,11 @@
 
 class NotionObject {
   constructor(value) {
-    this._value = value ?? {};
+    if (value == null) {
+      this._value = {};
+      return;
+    }
+    this._value = value;
   }
 
   get value() {
@@ -36,35 +40,21 @@ class NotionObject {
     return this;
   }
 
-  files(properties, name, url) {
-    const payload = {
-      type: "files",
-      files: [
-        {
-          name: name,
-          external: { url: url }
-        }
-      ]
-    };
+  files (properties, value) {
+    console.log("files 는 아직 미구현")
+    return this;
+  }
 
+  formula(properties, value) {
+    console.log("formula 는 아직 미구현")
+    const payload = { formula: { expression: value }, type: "formula" }
     const result = { [properties]: payload };
     this._value = { ...this._value, ...result };
     return this;
   }
 
-  multiSelect(properties, value, ...values) {
-    const resultArray = [
-      { name: value },
-      ...values.map(v => ({ name: v }))
-    ];
-
-    const payload = {
-      multi_select: resultArray,
-      type: "multi_select"
-    };
-
-    const result = { [properties]: payload };
-    this._value = { ...this._value, ...result };
+  multi_select(properties, value) {
+    console.log("multi_select 는 아직 미구현")
     return this;
   }
 
@@ -75,19 +65,8 @@ class NotionObject {
     return this;
   }
 
-  people(properties, id, ...ids) {
-    const resultArray = [
-      { id: id },
-      ...ids.map(peopleId => ({ id: peopleId }))
-    ];
-
-    const payload = {
-      people: resultArray,
-      type: "people"
-    };
-
-    const result = { [properties]: payload };
-    this._value = { ...this._value, ...result };
+  people(properties, value) {
+    console.log("people 는 아직 미구현")
     return this;
   }
 
@@ -98,19 +77,13 @@ class NotionObject {
     return this;
   }
 
-  relation(properties, id, ...ids) {
-    const resultArray = [
-      { id: id },
-      ...ids.map(relationId => ({ id: relationId }))
-    ];
+  place(properties, value) {
+    console.log("place 는 아직 미구현")
+    return this;
+  }
 
-    const payload = {
-      relation: resultArray,
-      type: "relation"
-    };
-
-    const result = { [properties]: payload };
-    this._value = { ...this._value, ...result };
+  relation(properties, value) {
+    console.log("relation 는 아직 미구현")
     return this;
   }
 
@@ -135,6 +108,11 @@ class NotionObject {
     return this;
   }
 
+  rollup(properties, value) {
+    console.log("rollup 는 아직 미구현")
+    return this;
+  }
+
   select(properties, value) {
     let payload = {};
 
@@ -150,13 +128,7 @@ class NotionObject {
   }
 
   status(properties, value) {
-    const payload = {
-      status: { name: value },
-      type: "status"
-    };
-
-    const result = { [properties]: payload };
-    this._value = { ...this._value, ...result };
+    console.log("status 는 아직 미구현")
     return this;
   }
 
@@ -186,6 +158,11 @@ class NotionObject {
     const payload = { url: value, type: "url" };
     const result = { [properties]: payload };
     this._value = { ...this._value, ...result };
+    return this;
+  }
+
+  unique_id(properties, value) {
+    console.log("unique_id 는 아직 미구현")
     return this;
   }
 }

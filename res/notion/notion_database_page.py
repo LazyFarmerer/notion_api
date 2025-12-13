@@ -60,10 +60,8 @@ class NotionDatabasePage(NotionBase, Update, Remove):
             return f"{{페이지: 삭제됨}}"
         result = [f"{key}={value}" for key, value in self._values.items()]
         if 3 < len(result):
-            joined = ",".join(result[:3])
-            return f"{{페이지: {joined} ...}}"
-        joined = ",".join(result)
-        return f"{{페이지: {joined}}}"
+            return f"{{페이지: {",".join(result[:3])} ...}}"
+        return f"{{페이지: {",".join(result)}}}"
 
 
 

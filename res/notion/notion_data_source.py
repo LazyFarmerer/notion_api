@@ -29,6 +29,7 @@ class DataSource(NotionBase, Read):
     def append_page(self, page: NotionDatabasePage | dict):
         if isinstance(page, NotionDatabasePage):
             self._data.append(page)
+            
 
     def _parser(self, response_data: dict):
         results: list = response_data["results"]

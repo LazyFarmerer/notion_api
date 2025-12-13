@@ -17,14 +17,8 @@ class CheckboxDatabaseObject:
         return value["checkbox"]
 
 
-class CreatedByDatabaseObject:
-    def get(self, value: dict) -> bool:
-        return value["created_by"]["id"]
-
-
-class CreatedTimeDatabaseObject:
-    def get(self, value: dict) -> bool:
-        return value["created_time"]
+# class CreatedByDatabaseObject: ...
+# class CreatedTimeDatabaseObject: ...
 
 
 class DateDatabaseObject:
@@ -55,45 +49,40 @@ class EmailDatabaseObject:
 
 
 class FilesDatabaseObject:
-    def object(self, name: str, url: str) -> dict:
-        return {
-            "type": "files",
-            "files": [
-                {
-                    "name": name,
-                    "external": { "url": url }
-                }
-            ]
-        }
+    def object(self, value: dict | None) -> dict:
+        raise NotImplementedError("노션 api 에서 파일 못올림!!!.")
     def get(self, value: dict) -> dict | None:
         if not value["files"]:
             return None
         result = {
             "name": value["files"][0]["name"],
-            "file": value["files"][0]["external"]["url"]
+            "file": value["files"][0]["file"]["url"]
         }
         return result
 
 
 class FormulaDatabaseObject:
-        # 업데이트 불가능
+    """ex) {{notion:block_property:BtVS:00000000-0000-0000-0000-000000000000:8994905a-074a-415f-9bcf-d1f8b4fa38e4}}/2"""
+    # 와 이게 뭐고 대충 어떤 값에서 / 2 인듯????
+    def object(self, value: str | None) -> dict:
+        print("Formula 정보")
+        print(value)
+        return { "formula": { "expression": value }, "type": "formula" }
+
     def get(self, value: dict) -> dict:
         return value["formula"]
 
+# {'id': 'mFdH', 'type': 'formula', 'formula': {'type': 'boolean', 'boolean': False}}
 
-class LastEditedByDatabaseObject:
-    def get(self, value: dict) -> bool:
-        return value["last_edited_by"]["id"]
-class LastEditedTimeDatabaseObject:
-    def get(self, value: dict) -> bool:
-        return value["last_edited_time"]
+# class LastEditedByDatabaseObject: ...
+# class LastEditedTimeDatabaseObject: ...
 
 
 class MultiSelectDatabaseObject:
-    def object(self, value: str, *values: str) -> dict:
-        result = [{ "name": value }]
-        result.extend( [ { "name": value } for value in values ] )
-        return { "multi_select": result, "type": "multi_select" }
+    def object(self, value: str | None) -> dict:
+        print("MultiSelect 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> list:
         if len(value["multi_select"]) == 0:
             return []
@@ -110,10 +99,10 @@ class NumberDatabaseObject:
 
 
 class PeopleDatabaseObject:
-    def object(self, id: str, *ids: str) -> dict:
-        result = [{ "id": id }]
-        result.extend( [ { "id": people_id } for people_id in ids ] )
-        return { "people": result, "type": "people" }
+    def object(self, value: float | None) -> dict:
+        print("People 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> list:
         if len(value["people"]) == 0:
             return []
@@ -130,6 +119,10 @@ class PhoneNumberDatabaseObject:
 
 
 class PlaceDatabaseObject:
+    def object(self, value: Any | None) -> dict:
+        print("Place 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> dict | None:
         if value["place"] is None:
             return None
@@ -143,10 +136,10 @@ class PlaceDatabaseObject:
 
 
 class RelationDatabaseObject:
-    def object(self, id: str, *ids: str) -> dict:
-        result = [{"id": id}]
-        result.extend( [ { "id": relation_id } for relation_id in ids ] )
-        return { "relation": result, "type": "relation" }
+    def object(self, value: Any | None) -> dict:
+        print("Relation 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> list | None:
         if len(value["relation"]) == 0:
             return None
@@ -171,11 +164,17 @@ class RichTextDatabaseObject:
 
 
 class RollupDatabaseObject:
+    def object(self, value: str | None) -> dict:
+        print("Rollup 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> Any:
+        print("Rollup 정보")
+        print(value)
         array: list = value["rollup"]["array"]
         if len(array) == 0:
             return None
-
+        
         type_ = array[0]["type"]
         return parser_database_object_data(type_, array[0])
 
@@ -197,7 +196,9 @@ class SelectDatabaseObject:
 
 class StatusDatabaseObject:
     def object(self, value: str | None) -> dict:
-        return { "status": { "name": value }, "type": "status" }
+        print("Status 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> dict:
         # 항상 값이 존재 (기본값이 있음)
         return value["status"]["name"]
@@ -228,69 +229,88 @@ class UrlDatabaseObject:
 
 
 class UniqueIDDatabaseObject:
+    def object(self, value: str | None) -> dict:
+        print("UniqueID 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> int:
         return value["unique_id"]["number"]
 
 
 class ButtonDatabaseObject:
+    def object(self, value: str | None) -> dict:
+        print("Button 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> dict:
         return value["button"]
 
 
 class DatabaseObject(DictValueBase):
     def checkbox(self, properties: str, value: bool):
-        """체크박스가 선택되었는지(True) 또는 선택되지 않았는지(False)를 나타냅니다."""
+        """체크박스"""
         result = { properties : CheckboxDatabaseObject().object(value) }
         self._value.update(result)
         return self
+    
+    # def created_by(self, properties: str): ...
+    # def created_time(self, properties: str): ...
 
     def date(self, properties: str, start: str | None, end: str | None=None):
-        """페이지 속성 값의 가 인 경우 , 해당 속성 값에는 다음과 같은 필드를 가진 객체가 포함됩니다.
-        
-        예시값 "2020-12-08T12:00:00Z", "2020-12-08T12:00:00Z” """
+        """날짜 ex)'2022-08-08'"""
         result = { properties : DateDatabaseObject().object(start, end) }
         self._value.update(result)
         return self
 
     def email(self, properties: str, value: str | None):
-        """이메일 주소를 설명하는 문자열입니다."""
+        """이메일"""
         result = { properties : EmailDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
-    def files(self, properties: str, name: str, url: str):
-        """파일에 대한 정보를 담고 파일 이름과 url"""
-        result = { properties : FilesDatabaseObject().object(name, url) }
+    def files(self, properties: str, value: dict | None):
+        """파일은 노션 api 로 올릴 수 없음!"""
+        result = { properties : FilesDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
-    def multi_select(self, properties: str, value: str, *values: str):
-        """표시되는 옵션 이름입니다"""
-        result = { properties : MultiSelectDatabaseObject().object(value, *values) }
+    def formula(self, properties: str, value: str | None):
+        result = { properties : FormulaDatabaseObject().object(value) }
+        self._value.update(result)
+        return self
+
+    # def last_edited_by(self, properties: str): ...
+    # def last_edited_time(self, properties: str): ...
+
+    def multi_select(self, properties: str, value: Any | None):
+        result = { properties : MultiSelectDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
     def number(self, properties: str, value: float | None):
-        """어떤 값을 나타내는 숫자."""
+        """숫자"""
         result = { properties : NumberDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
-    def people(self, properties: str, id: str, *ids: str):
-        """유저의 id 값을 넣으면 되긴 한데 구하기 쉽지 않음"""
-        result = { properties : PeopleDatabaseObject().object(id, *ids) }
+    def people(self, properties: str, value: Any | None):
+        result = { properties : PeopleDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
     def phone_number(self, properties: str, value: str | None):
-        """전화번호를 나타내는 문자열입니다. 전화번호 형식은 지정되어 있지 않습니다."""
+        """전화번호 그런데 아무거나 다 적히긴 함"""
         result = { properties : PhoneNumberDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
-    def relation(self, properties: str, id: str, *ids: str):
-        """다른 데이터베이스의 페이지 id 값을 넣어주면 됨"""
-        result = { properties : RelationDatabaseObject().object(id, *ids) }
+    def place(self, properties: str, value: Any | None):
+        result = { properties : PlaceDatabaseObject().object(value) }
+        self._value.update(result)
+        return self
+
+    def relation(self, properties: str, value: Any | None):
+        result = { properties : RelationDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
@@ -300,14 +320,18 @@ class DatabaseObject(DictValueBase):
         self._value.update(result)
         return self
 
+    def rollup(self, properties: str, value: str | None):
+        result = { properties : RollupDatabaseObject().object(value) }
+        self._value.update(result)
+        return self
+
     def select(self, properties: str, value: str | None):
-        """표시되는 옵션 이름입니다"""
+        """선택"""
         result = { properties : SelectDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
     def status(self, properties: str, value: str | None):
-        """표시되는 옵션 이름입니다"""
         result = { properties : StatusDatabaseObject().object(value) }
         self._value.update(result)
         return self
@@ -319,8 +343,18 @@ class DatabaseObject(DictValueBase):
         return self
 
     def url(self, properties: str, value: str | None):
-        """웹 주소를 설명하는 문자열입니다."""
+        """URL"""
         result = { properties : UrlDatabaseObject().object(value) }
+        self._value.update(result)
+        return self
+
+    def unique_id(self, properties: str, value: str | None):
+        result = { properties : UniqueIDDatabaseObject().object(value) }
+        self._value.update(result)
+        return self
+
+    def button(self, properties: str, value: str | None):
+        result = { properties : ButtonDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
@@ -331,9 +365,9 @@ def parser_database_object_data(type_: str, data: dict):
         case "checkbox":
             return CheckboxDatabaseObject().get(data)
         case "created_by":
-            return CreatedByDatabaseObject().get(data)
+            return # CreatedByDatabaseObject().get(data)
         case "created_time":
-            return CreatedTimeDatabaseObject().get(data)
+            return # CreatedTimeDatabaseObject().get(data)
         case "date":
             return DateDatabaseObject().get(data)
         case "email":
@@ -343,9 +377,9 @@ def parser_database_object_data(type_: str, data: dict):
         case "formula":
             return FormulaDatabaseObject().get(data)
         case "last_edited_by":
-            return LastEditedByDatabaseObject().get(data)
+            return # LastEditedByDatabaseObject().get(data)
         case "last_edited_time":
-            return LastEditedTimeDatabaseObject().get(data)
+            return # LastEditedTimeDatabaseObject().get(data)
         case "multi_select":
             return MultiSelectDatabaseObject().get(data)
         case "number":

@@ -1,14 +1,13 @@
 
 
-# pythonista 에서 쓰일거
 # 한줄에 때려박기
 
 from typing import Literal, Any, overload
+import sys, re
 from abc import ABC, abstractmethod
-from sys import _getframe as sys_getframe
-from re import sub as re_sub
 
 import requests
+
 
 class NotionBase:
     def __init__(self, api_key: str, id: str, object: str):
@@ -26,7 +25,6 @@ class NotionBase:
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}"
         }
-
 
 class Read(ABC):
     @abstractmethod
@@ -54,7 +52,11 @@ class Remove(ABC):
 
 class DictValueBase:
     def __init__(self, value: dict | None = None) -> None:
-        self._value = value if isinstance(value, dict) else {}
+        if value is None:
+            self._value = {}
+            return
+
+        self._value = value
 
     @property
     def value(self) -> dict:
@@ -63,7 +65,11 @@ class DictValueBase:
 
 class ListValueBase:
     def __init__(self, value: list | None = None) -> None:
-        self._value = value if isinstance(value, list) else []
+        if value is None:
+            self._value = []
+            return
+
+        self._value = value
 
     @property
     def value(self) -> list:
@@ -78,14 +84,8 @@ class CheckboxDatabaseObject:
         return value["checkbox"]
 
 
-class CreatedByDatabaseObject:
-    def get(self, value: dict) -> bool:
-        return value["created_by"]["id"]
-
-
-class CreatedTimeDatabaseObject:
-    def get(self, value: dict) -> bool:
-        return value["created_time"]
+# class CreatedByDatabaseObject: ...
+# class CreatedTimeDatabaseObject: ...
 
 
 class DateDatabaseObject:
@@ -116,45 +116,40 @@ class EmailDatabaseObject:
 
 
 class FilesDatabaseObject:
-    def object(self, name: str, url: str) -> dict:
-        return {
-            "type": "files",
-            "files": [
-                {
-                    "name": name,
-                    "external": { "url": url }
-                }
-            ]
-        }
+    def object(self, value: dict | None) -> dict:
+        raise NotImplementedError("노션 api 에서 파일 못올림!!!.")
     def get(self, value: dict) -> dict | None:
         if not value["files"]:
             return None
         result = {
             "name": value["files"][0]["name"],
-            "file": value["files"][0]["external"]["url"]
+            "file": value["files"][0]["file"]["url"]
         }
         return result
 
 
 class FormulaDatabaseObject:
-        # 업데이트 불가능
+    """ex) {{notion:block_property:BtVS:00000000-0000-0000-0000-000000000000:8994905a-074a-415f-9bcf-d1f8b4fa38e4}}/2"""
+    # 와 이게 뭐고 대충 어떤 값에서 / 2 인듯????
+    def object(self, value: str | None) -> dict:
+        print("Formula 정보")
+        print(value)
+        return { "formula": { "expression": value }, "type": "formula" }
+
     def get(self, value: dict) -> dict:
         return value["formula"]
 
+# {'id': 'mFdH', 'type': 'formula', 'formula': {'type': 'boolean', 'boolean': False}}
 
-class LastEditedByDatabaseObject:
-    def get(self, value: dict) -> bool:
-        return value["last_edited_by"]["id"]
-class LastEditedTimeDatabaseObject:
-    def get(self, value: dict) -> bool:
-        return value["last_edited_time"]
+# class LastEditedByDatabaseObject: ...
+# class LastEditedTimeDatabaseObject: ...
 
 
 class MultiSelectDatabaseObject:
-    def object(self, value: str, *values: str) -> dict:
-        result = [{ "name": value }]
-        result.extend( [ { "name": value } for value in values ] )
-        return { "multi_select": result, "type": "multi_select" }
+    def object(self, value: str | None) -> dict:
+        print("MultiSelect 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> list:
         if len(value["multi_select"]) == 0:
             return []
@@ -171,10 +166,10 @@ class NumberDatabaseObject:
 
 
 class PeopleDatabaseObject:
-    def object(self, id: str, *ids: str) -> dict:
-        result = [{ "id": id }]
-        result.extend( [ { "id": people_id } for people_id in ids ] )
-        return { "people": result, "type": "people" }
+    def object(self, value: float | None) -> dict:
+        print("People 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> list:
         if len(value["people"]) == 0:
             return []
@@ -191,6 +186,8 @@ class PhoneNumberDatabaseObject:
 
 
 class PlaceDatabaseObject:
+    def object(self, value: Any | None) -> dict:
+        raise NotImplementedError("빠른 시일내로 만들기.")
     def get(self, value: dict) -> dict | None:
         if value["place"] is None:
             return None
@@ -204,10 +201,10 @@ class PlaceDatabaseObject:
 
 
 class RelationDatabaseObject:
-    def object(self, id: str, *ids: str) -> dict:
-        result = [{"id": id}]
-        result.extend( [ { "id": relation_id } for relation_id in ids ] )
-        return { "relation": result, "type": "relation" }
+    def object(self, value: Any | None) -> dict:
+        print("Relation 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> list | None:
         if len(value["relation"]) == 0:
             return None
@@ -217,7 +214,6 @@ class RelationDatabaseObject:
 
 class RichTextDatabaseObject:
     def object(self, value: str | None) -> dict:
-        payload = {}
         if isinstance(value, str):
             payload = { "rich_text": [ { "text": { "content": value }, "type": "text" } ] }
         elif value is None:
@@ -232,13 +228,14 @@ class RichTextDatabaseObject:
 
 
 class RollupDatabaseObject:
-    def get(self, value: dict) -> Any:
-        array: list = value["rollup"]["array"]
-        if len(array) == 0:
-            return None
-
-        type_ = array[0]["type"]
-        return parser_database_object_data(type_, array[0])
+    def object(self, value: str | None) -> dict:
+        print("Rollup 정보")
+        print(value)
+        return {}
+    def get(self, value: dict) -> dict | None:
+        print("Rollup 정보")
+        print(value)
+        return {}
 
 
 class SelectDatabaseObject:
@@ -258,7 +255,9 @@ class SelectDatabaseObject:
 
 class StatusDatabaseObject:
     def object(self, value: str | None) -> dict:
-        return { "status": { "name": value }, "type": "status" }
+        print("Status 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> dict:
         # 항상 값이 존재 (기본값이 있음)
         return value["status"]["name"]
@@ -266,7 +265,6 @@ class StatusDatabaseObject:
 
 class TitleDatabaseObject:
     def object(self, value: str | None) -> dict:
-        payload = {}
         if isinstance(value, str):
             payload = { "title": [ { "text": { "content": value }, "type": "text" } ], "type": "title" }
         elif value is None:
@@ -289,69 +287,88 @@ class UrlDatabaseObject:
 
 
 class UniqueIDDatabaseObject:
+    def object(self, value: str | None) -> dict:
+        print("UniqueID 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> int:
         return value["unique_id"]["number"]
 
 
 class ButtonDatabaseObject:
+    def object(self, value: str | None) -> dict:
+        print("Button 정보")
+        print(value)
+        return {}
     def get(self, value: dict) -> dict:
         return value["button"]
 
 
 class DatabaseObject(DictValueBase):
     def checkbox(self, properties: str, value: bool):
-        """체크박스가 선택되었는지(True) 또는 선택되지 않았는지(False)를 나타냅니다."""
+        """체크박스"""
         result = { properties : CheckboxDatabaseObject().object(value) }
         self._value.update(result)
         return self
+    
+    # def created_by(self, properties: str): ...
+    # def created_time(self, properties: str): ...
 
     def date(self, properties: str, start: str | None, end: str | None=None):
-        """페이지 속성 값의 가 인 경우 , 해당 속성 값에는 다음과 같은 필드를 가진 객체가 포함됩니다.
-        
-        예시값 "2020-12-08T12:00:00Z", "2020-12-08T12:00:00Z” """
+        """날짜 ex)'2022-08-08'"""
         result = { properties : DateDatabaseObject().object(start, end) }
         self._value.update(result)
         return self
 
     def email(self, properties: str, value: str | None):
-        """이메일 주소를 설명하는 문자열입니다."""
+        """이메일"""
         result = { properties : EmailDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
-    def files(self, properties: str, name: str, url: str):
-        """파일에 대한 정보를 담고 파일 이름과 url"""
-        result = { properties : FilesDatabaseObject().object(name, url) }
+    def files(self, properties: str, value: dict | None):
+        """파일은 노션 api 로 올릴 수 없음!"""
+        result = { properties : FilesDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
-    def multi_select(self, properties: str, value: str, *values: str):
-        """표시되는 옵션 이름입니다"""
-        result = { properties : MultiSelectDatabaseObject().object(value, *values) }
+    def formula(self, properties: str, value: str | None):
+        result = { properties : FormulaDatabaseObject().object(value) }
+        self._value.update(result)
+        return self
+
+    # def last_edited_by(self, properties: str): ...
+    # def last_edited_time(self, properties: str): ...
+
+    def multi_select(self, properties: str, value: Any | None):
+        result = { properties : MultiSelectDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
     def number(self, properties: str, value: float | None):
-        """어떤 값을 나타내는 숫자."""
+        """숫자"""
         result = { properties : NumberDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
-    def people(self, properties: str, id: str, *ids: str):
-        """유저의 id 값을 넣으면 되긴 한데 구하기 쉽지 않음"""
-        result = { properties : PeopleDatabaseObject().object(id, *ids) }
+    def people(self, properties: str, value: Any | None):
+        result = { properties : PeopleDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
     def phone_number(self, properties: str, value: str | None):
-        """전화번호를 나타내는 문자열입니다. 전화번호 형식은 지정되어 있지 않습니다."""
+        """전화번호 그런데 아무거나 다 적히긴 함"""
         result = { properties : PhoneNumberDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
-    def relation(self, properties: str, id: str, *ids: str):
-        """다른 데이터베이스의 페이지 id 값을 넣어주면 됨"""
-        result = { properties : RelationDatabaseObject().object(id, *ids) }
+    def place(self, properties: str, value: Any | None):
+        result = { properties : PlaceDatabaseObject().object(value) }
+        self._value.update(result)
+        return self
+
+    def relation(self, properties: str, value: Any | None):
+        result = { properties : RelationDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
@@ -361,14 +378,18 @@ class DatabaseObject(DictValueBase):
         self._value.update(result)
         return self
 
+    def rollup(self, properties: str, value: str | None):
+        result = { properties : RollupDatabaseObject().object(value) }
+        self._value.update(result)
+        return self
+
     def select(self, properties: str, value: str | None):
-        """표시되는 옵션 이름입니다"""
+        """선택"""
         result = { properties : SelectDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
     def status(self, properties: str, value: str | None):
-        """표시되는 옵션 이름입니다"""
         result = { properties : StatusDatabaseObject().object(value) }
         self._value.update(result)
         return self
@@ -380,8 +401,18 @@ class DatabaseObject(DictValueBase):
         return self
 
     def url(self, properties: str, value: str | None):
-        """웹 주소를 설명하는 문자열입니다."""
+        """URL"""
         result = { properties : UrlDatabaseObject().object(value) }
+        self._value.update(result)
+        return self
+
+    def unique_id(self, properties: str, value: str | None):
+        result = { properties : UniqueIDDatabaseObject().object(value) }
+        self._value.update(result)
+        return self
+
+    def button(self, properties: str, value: str | None):
+        result = { properties : ButtonDatabaseObject().object(value) }
         self._value.update(result)
         return self
 
@@ -392,9 +423,9 @@ def parser_database_object_data(type_: str, data: dict):
         case "checkbox":
             return CheckboxDatabaseObject().get(data)
         case "created_by":
-            return CreatedByDatabaseObject().get(data)
+            return # CreatedByDatabaseObject().get(data)
         case "created_time":
-            return CreatedTimeDatabaseObject().get(data)
+            return # CreatedTimeDatabaseObject().get(data)
         case "date":
             return DateDatabaseObject().get(data)
         case "email":
@@ -404,9 +435,9 @@ def parser_database_object_data(type_: str, data: dict):
         case "formula":
             return FormulaDatabaseObject().get(data)
         case "last_edited_by":
-            return LastEditedByDatabaseObject().get(data)
+            return # LastEditedByDatabaseObject().get(data)
         case "last_edited_time":
-            return LastEditedTimeDatabaseObject().get(data)
+            return # LastEditedTimeDatabaseObject().get(data)
         case "multi_select":
             return MultiSelectDatabaseObject().get(data)
         case "number":
@@ -448,8 +479,8 @@ def _return_value(property_: str, filter_name: str, field: str, value: Any) -> d
     }
 
 def _camel_to_snake(name):
-    s1 = re_sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re_sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
 class FilterBase(DictValueBase):
@@ -463,19 +494,19 @@ class CheckboxFilter(FilterBase):
         """속성 값이 제공된 값과 정확히 일치하는지 여부를 나타냅니다.
 
         값이 정확히 일치하는 모든 데이터 소스 항목을 반환하거나 제외합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def does_not_equal(self, property_: str, value: bool):
         """속성 값이 제공된 값과 다른지 여부를 나타냅니다.
 
         값에 차이가 있는 모든 데이터 소스 항목을 반환하거나 제외합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
 
 class DateFilter(FilterBase):
@@ -485,10 +516,10 @@ class DateFilter(FilterBase):
         날짜 속성 값이 제공된 날짜 이후인 데이터 소스 항목을 반환합니다.
 
         ex) "2021-05-10", "2021-05-10T12:00:00", "2021-10-15T12:00:00-07:00" """
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def before(self, property_: str, value: str):
         """날짜 속성 값과 비교할 값입니다.
@@ -496,10 +527,10 @@ class DateFilter(FilterBase):
         날짜 속성 값이 제공된 날짜 이전인 데이터 소스 항목을 반환합니다.
 
         ex) "2021-05-10", "2021-05-10T12:00:00", "2021-10-15T12:00:00-07:00" """
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def equals(self, property_: str, value: str):
         """날짜 속성 값과 비교할 값입니다.
@@ -507,57 +538,57 @@ class DateFilter(FilterBase):
         날짜 속성 값이 제공된 날짜인 데이터 소스 항목을 반환합니다.
 
         ex) "2021-05-10", "2021-05-10T12:00:00", "2021-10-15T12:00:00-07:00" """
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_empty(self, property_: str):
         """날짜 속성 값과 비교할 값입니다.
 
         날짜 속성 값에 데이터가 없는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_not_empty(self, property_: str):
         """날짜 속성 값과 비교할 값입니다.
 
         날짜 속성 값이 비어 있지 않은 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def next_month(self, property_: str):
         """날짜 속성 값이 다음 달 이내인 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
     def next_week(self, property_: str):
         """날짜 속성 값이 다음 주 이내인 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
     def next_year(self, property_: str):
         """날짜 속성 값이 내년 이내인 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
     def on_or_after(self, property_: str, value: str):
         """날짜 속성 값과 비교할 값입니다.
 
         날짜 속성 값이 지정된 날짜와 같거나 이후인 데이터 소스 항목을 반환합니다.
 
         ex) "2021-05-10", "2021-05-10T12:00:00", "2021-10-15T12:00:00-07:00" """
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def on_or_before(self, property_: str, value: str):
         """날짜 속성 값과 비교할 값입니다.
@@ -565,54 +596,96 @@ class DateFilter(FilterBase):
         날짜 속성 값이 지정된 날짜와 같거나 이전인 데이터 소스 항목을 반환합니다.
 
         ex) "2021-05-10", "2021-05-10T12:00:00", "2021-10-15T12:00:00-07:00" """
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def past_month(self, property_: str):
         """지난달 이내의 부동산 가치가 있는 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
     def past_week(self, property_: str):
         """지난주 이내의 속성 값이 포함된 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
     def past_year(self, property_: str):
         """해당 속성 가치가 지난 1년 이내인 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
     def this_week(self, property_: str):
         """이번 주에 속성 값이 있는 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
 class FilesFilter(FilterBase):
     def is_empty(self, property_: str):
         """파일 속성 값에 데이터가 포함되어 있지 않은지 여부를 나타냅니다.
 
         속성 값이 비어 있는 모든 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_not_empty(self, property_: str):
         """속성 값에 데이터가 포함되어 있는지 여부를 나타냅니다.
 
         속성 값 이 채워진 모든 항목을 반환합니다"""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
+
+
+class FormulaFilter(FilterBase):
+    def checkbox(self, property_: str, value: CheckboxFilter):
+        """수식 결과를 비교할 체크박스 필터 조건입니다.
+
+        수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
+        method_name = sys._getframe(0).f_code.co_name
+        _value = value.value["checkbox"]
+        result = _return_value(property_, self._filter_name, method_name, _value)
+        self._value.update(result)
+        return self
+
+    def date(self, property_: str, value: DateFilter):
+        """수식 결과를 비교할 날짜 필터 조건입니다.
+
+        수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
+        method_name = sys._getframe(0).f_code.co_name
+        _value = value.value["date"]
+        result = _return_value(property_, self._filter_name, method_name, _value)
+        self._value.update(result)
+        return self
+
+    def number(self, property_: str, value: NumberFilter):
+        """수식 결과를 비교할 숫자 필터 조건입니다.
+
+        수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
+        method_name = sys._getframe(0).f_code.co_name
+        _value = value.value["number"]
+        result = _return_value(property_, self._filter_name, method_name, _value)
+        self._value.update(result)
+        return self
+
+    def string(self, property_: str, value: RichTextFilter):
+        """수식 결과를 비교할 서식 있는 텍스트 필터 조건입니다.
+
+        수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
+        method_name = sys._getframe(0).f_code.co_name
+        _value = value.value["rich_text"]
+        result = _return_value(property_, self._filter_name, method_name, _value)
+        self._value.update(result)
+        return self
 
 
 class MultiSelectFilter(FilterBase):
@@ -620,37 +693,37 @@ class MultiSelectFilter(FilterBase):
         """다중 선택 속성 값을 비교할 값입니다.
 
         다중 선택 값이 제공된 문자열과 일치하는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def does_not_contain(self, property_: str, value: str):
         """다중 선택 속성 값을 비교할 값입니다.
 
         다중 선택 값이 제공된 문자열과 일치하지 않는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_empty(self, property_: str):
         """다중 선택 속성 값이 비어 있는지 여부를 나타냅니다.
 
         다중 선택 값에 데이터가 없는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_not_empty(self, property_: str):
         """다중 선택 속성 값이 비어 있지 않은지 여부를 나타냅니다.
 
         다중 선택 값에 데이터가 포함된 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
 
 class NumberFilter(FilterBase):
@@ -658,73 +731,73 @@ class NumberFilter(FilterBase):
         """숫자 속성 값을 비교할 입니다.
 
         숫자 속성 값이 제공된 값과 다른 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def equals(self, property_: str, value: float):
         """숫자 속성 값을 비교할 대상입니다.
 
         숫자 속성 값이 제공된 숫자와 동일한 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def greater_than(self, property_: str, value: float):
         """숫자 속성 값을 비교할 대상입니다.
 
         숫자 속성 값이 제공된 값을 초과하는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def greater_than_or_equal_to(self, property_: str, value: float):
         """숫자 속성 값을 비교할 대상입니다.
 
         숫자 속성 값이 제공된 값보다 크거나 같은 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_empty(self, property_: str):
         """속성 값이 비어 있는지 여부를 나타냅니다.
 
         숫자 속성 값에 데이터가 없는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_not_empty(self, property_: str):
         """숫자 속성 값이 비어 있는지 여부를 나타냅니다.
 
         숫자 속성 값에 데이터가 포함된 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def less_than(self, property_: str, value: float):
         """숫자 속성 값을 비교할 대상입니다.
 
         숫자 속성 값이 제공된 값보다 작은 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def less_than_or_equal_to(self, property_: str, value: float):
         """숫자 속성 값을 비교할 대상입니다.
 
         숫자 속성 값이 제공된 값보다 작거나 같은 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
 
 class PeopleFilter(FilterBase):
@@ -732,37 +805,37 @@ class PeopleFilter(FilterBase):
         """people 속성 값과 비교할 값입니다.
 
         people 속성 값에 제공된 .이 포함된 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def does_not_contain(self, property_: str, value: str): # UUIDv4 ex) "6c574cee-ca68-41c8-86e0-1b9e992689fb"
         """people 속성 값과 비교할 값입니다.
 
         people 속성 값에 제공된 .이 포함되지 않은 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_empty(self, property_: str):
         """people 속성 값에 데이터가 포함되어 있지 않은지 여부를 나타냅니다.
 
         people 속성 값에 데이터가 없는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_not_empty(self, property_: str):
         """people 속성 값에 데이터가 포함되어 있는지 여부를 나타냅니다.
 
         people 속성 값이 비어 있지 않은 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
 
 class RelationFilter(FilterBase):
@@ -770,37 +843,37 @@ class RelationFilter(FilterBase):
         """관계 속성 값과 비교할 값입니다.
 
         관계 속성 값에 제공된 .이 포함된 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value) # UUIDv4 ex) "6c574cee-ca68-41c8-86e0-1b9e992689fb"
+        return self # UUIDv4 ex) "6c574cee-ca68-41c8-86e0-1b9e992689fb"
 
     def does_not_contain(self, property_: str, value: str):
         """관계 속성 값과 비교할 값입니다.
 
         관계 속성 값에 제공된 .이 포함되지 않은 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_empty(self, property_: str):
         """관계 속성 값에 데이터가 포함되어 있지 않은지 여부를 나타냅니다.
 
         관계 속성 값에 데이터가 없는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_not_empty(self, property_: str):
         """관계 속성 값에 데이터가 포함되어 있는지 여부를 나타냅니다.
 
         속성 값이 비어 있지 않은 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
 
 class RichTextFilter(FilterBase):
@@ -808,71 +881,71 @@ class RichTextFilter(FilterBase):
         """텍스트 속성 값을 비교할 대상입니다.
 
         제공된 값을 포함하는 텍스트 속성 값을 가진 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def does_not_contain(self, property_: str, value: str):
         """텍스트 속성 값을 비교할 대상입니다.
 
         제공된 값을 포함하지 않는 텍스트 속성 값을 가진 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def does_not_equal(self, property_: str, value: str):
         """텍스트 속성 값을 비교할 대상입니다.
 
         제공된 값과 일치하지 않는 텍스트 속성 값을 가진 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def ends_with(self, property_: str, value: str):
         """텍스트 속성 값을 비교할 대상입니다.
 
         제공된 값으로 끝나는 텍스트 속성 값을 가진 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def equals(self, property_: str, value: str):
         """텍스트 속성 값을 비교할 대상입니다.
 
         제공된 값과 일치하는 텍스트 속성 값을 가진 데이터 소스 항목을 반환합니다"""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_empty(self, property_: str):
         """텍스트 속성 값에 데이터가 포함되어 있지 않은지 여부를 나타냅니다.
 
         텍스트 속성 값이 비어 있는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_not_empty(self, property_: str):
         """텍스트 속성 값에 데이터가 포함되어 있는지 여부를 나타냅니다.
 
         데이터가 포함된 텍스트 속성 값을 가진 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def starts_with(self, property_: str, value: str):
         """텍스트 속성 값을 비교할 대상입니다. 제공된 값으로 시작하는 텍스트 속성 값을 가진 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
 
 # class RollupFilter(FilterBase): ... # 일단 패스
@@ -883,37 +956,37 @@ class SelectFilter(FilterBase):
         """select 속성 값을 비교할 대상입니다.
 
         select 속성 값이 제공된 문자열과 일치하는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def does_not_equal(self, property_: str, value: str):
         """select 속성 값을 비교할 입니다.
 
         select 속성 값이 제공된 문자열과 일치하지 않는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_empty(self, property_: str):
         """select 속성 값에 데이터가 포함되어 있지 않은지 여부를 나타냅니다.
 
         select 속성 값이 비어 있는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_not_empty(self, property_: str):
         """select 속성 값에 데이터가 포함되어 있는지 여부를 나타냅니다.
 
         select 속성 값이 비어 있지 않은 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
 
 class StatusFilter(FilterBase):
@@ -921,37 +994,37 @@ class StatusFilter(FilterBase):
         """상태 속성 값을 비교할 문자열입니다.
 
         상태 속성 값이 제공된 문자열과 일치하는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def does_not_equal(self, property_: str, value: str):
         """상태 속성 값을 비교할 문자열입니다.
 
         상태 속성 값이 제공된 문자열과 일치하지 않는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_empty(self, property_: str):
         """상태 속성 값에 데이터가 포함되어 있지 않은지 여부를 나타냅니다.
 
         상태 속성 값이 비어 있는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def is_not_empty(self, property_: str):
         """상태 속성 값에 데이터가 포함되어 있는지 여부를 나타냅니다.
 
         상태 속성 값이 비어 있지 않은 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
 
 # class TimestampFilter(FilterBase): ...
@@ -971,107 +1044,65 @@ class VerificationFilter(FilterBase):
         """쿼리 중인 확인 상태입니다. 유효한 옵션은 다음과 같습니다.
 
         "verified", "expired", null 현재 확인 상태가 쿼리된 상태와 일치하는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
 class IDFilter(FilterBase):
     def does_not_equal(self, property_: str, value: float):
         """unique_id 속성 값과 비교할 값입니다.
 
         unique_id 속성 값이 제공된 값과 다른 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def equals(self, property_: str, value: float):
         """unique_id 속성 값과 비교할 값입니다.
 
         unique_id 속성 값이 제공된 값과 동일한 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def greater_than(self, property_: str, value: float):
         """unique_id 속성 값과 비교할 값입니다.
 
         unique_id 속성 값이 제공된 값을 초과하는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def greater_than_or_equal_to(self, property_: str, value: float):
         """unique_id 속성 값과 비교할 값입니다.
 
         unique_id 속성 값이 제공된 값과 같거나 큰 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def less_than(self, property_: str, value: float):
         """unique_id 속성 값과 비교할 값입니다.
 
         unique_id 속성 값이 제공된 값보다 작은 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
     def less_than_or_equal_to(self, property_: str, value: float):
         """unique_id 속성 값과 비교할 값입니다.
 
         unique_id 속성 값이 제공된 값보다 작거나 같은 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
+        method_name = sys._getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
-
-
-class FormulaFilter(FilterBase):
-    def checkbox(self, property_: str, value: CheckboxFilter):
-        """수식 결과를 비교할 체크박스 필터 조건입니다.
-
-        수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
-        _value = value.value["checkbox"]
-        result = _return_value(property_, self._filter_name, method_name, _value)
-        self._value.update(result)
-        return FilterBase(self._value)
-
-    def date(self, property_: str, value: DateFilter):
-        """수식 결과를 비교할 날짜 필터 조건입니다.
-
-        수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
-        _value = value.value["date"]
-        result = _return_value(property_, self._filter_name, method_name, _value)
-        self._value.update(result)
-        return FilterBase(self._value)
-
-    def number(self, property_: str, value: NumberFilter):
-        """수식 결과를 비교할 숫자 필터 조건입니다.
-
-        수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
-        _value = value.value["number"]
-        result = _return_value(property_, self._filter_name, method_name, _value)
-        self._value.update(result)
-        return FilterBase(self._value)
-
-    def string(self, property_: str, value: RichTextFilter):
-        """수식 결과를 비교할 서식 있는 텍스트 필터 조건입니다.
-
-        수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
-        method_name = sys_getframe(0).f_code.co_name
-        _value = value.value["rich_text"]
-        result = _return_value(property_, self._filter_name, method_name, _value)
-        self._value.update(result)
-        return FilterBase(self._value)
+        return self
 
 
 class Filter(FilterBase):
@@ -1127,73 +1158,6 @@ class _Sort(SortBase):
         return self
 
 
-class NotionDatabasePage(NotionBase, Update, Remove):
-    def __init__(self, api_key: str, id: str, object: str, values: dict[str, Any], types: dict[str, str]):
-        super().__init__(api_key, id, object)
-        self._values = values
-        self._types = types
-
-    def update(self, update_properties_object: DatabaseObject) -> "NotionDatabasePage":
-        url = f"https://api.notion.com/v1/pages/{self.id}"
-        headers = self._add_headers("2025-09-03")
-        update_properties = update_properties_object.value
-
-        payload = {
-            "in_trash": False,
-            "erase_content": False,
-            "properties": update_properties
-        }
-
-        response = requests.patch(url, json=payload, headers=headers)
-        if not response.ok:
-            raise ValueError(response.json())
-
-        new_page = _parser_page(self.api_key, response.json())
-        # 업데이트
-        self._values = new_page._values
-        self._types = new_page._types
-        return new_page
-
-    def remove(self) -> bool:
-        url = f"https://api.notion.com/v1/pages/{self.id}"
-        headers = self._add_headers("2025-09-03")
-        payload = {
-            "archived": False
-        }
-        # self.archived = True
-
-        response = requests.patch(url, json=payload, headers=headers)
-        # 되살리고 싶다면 archived 를 True 로
-        return response.ok
-
-    @property
-    def value(self):
-        return self._values
-    def __str__(self) -> str:
-        if self.archived:
-            return f"{{페이지: 삭제됨}}"
-        result = [f"{key}={value}" for key, value in self._values.items()]
-        if 3 < len(result):
-            joined = ",".join(result[:3])
-            return f"{{페이지: {joined} ...}}"
-        joined = ",".join(result)
-        return f"{{페이지: {joined}}}"
-
-
-
-def _parser_page(api_key: str, data: dict) -> NotionDatabasePage:
-    _id = data["id"]
-    _object = data["object"]
-    values = {}
-    types = {}
-    properties: dict = data["properties"]
-    for key, value in properties.items():
-        _type: str = value["type"]
-        values[key] = parser_database_object_data(_type, value)
-        types[key] = _type
-    return NotionDatabasePage(api_key, _id, _object, values, types)
-
-
 class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
     def __init__(self, key: str, DB_id: str):
         super().__init__(key, DB_id, "database")
@@ -1201,7 +1165,7 @@ class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
 
     def write(self, write_properties_object_: DatabaseObject):
         url = "https://api.notion.com/v1/pages"
-        headers = self._add_headers("2022-06-28")
+        headers = self._add_headers("2025-09-03")
 
         payload = {
             "parent": { "database_id": self.id },
@@ -1297,9 +1261,72 @@ class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
         stringlist = [str(source) for source in self._datas]
 
         if 3 < data_sources_count:
-            joined = ",".join(stringlist[:3])
-            return f"[데이터베이스: {joined}...]"
+            return f"[데이터베이스: {",".join(stringlist[:3])}...]"
 
-        joined = ",".join(stringlist)
-        return f"[데이터베이스: {joined}]"
+        return f"[데이터베이스: {",".join(stringlist)}]"
+
+
+class NotionDatabasePage(NotionBase, Update, Remove):
+    def __init__(self, api_key: str, id: str, object: str, values: dict[str, Any], types: dict[str, str]):
+        super().__init__(api_key, id, object)
+        self._values = values
+        self._types = types
+
+    def update(self, update_properties_object: DatabaseObject) -> NotionDatabasePage:
+        url = f"https://api.notion.com/v1/pages/{self.id}"
+        headers = self._add_headers("2025-09-03")
+        update_properties = update_properties_object.value
+
+        payload = {
+            "in_trash": False,
+            "erase_content": False,
+            "properties": update_properties
+        }
+
+        response = requests.patch(url, json=payload, headers=headers)
+        if not response.ok:
+            raise ValueError(response.json())
+
+        new_page = _parser_page(self.api_key, response.json())
+        # 업데이트
+        self._values = new_page._values
+        self._types = new_page._types
+        return new_page
+
+    def remove(self) -> bool:
+        url = f"https://api.notion.com/v1/pages/{self.id}"
+        headers = self._add_headers("2025-09-03")
+        payload = {
+            "archived": False
+        }
+        # self.archived = True
+
+        response = requests.patch(url, json=payload, headers=headers)
+        # 되살리고 싶다면 archived 를 True 로
+        return response.ok
+
+    @property
+    def value(self):
+        return self._values
+    def __str__(self) -> str:
+        if self.archived:
+            return f"{{페이지: 삭제됨}}"
+        result = [f"{key}={value}" for key, value in self._values.items()]
+        if 3 < len(result):
+            return f"{{페이지: {",".join(result[:3])} ...}}"
+        return f"{{페이지: {",".join(result)}}}"
+
+
+
+def _parser_page(api_key: str, data: dict) -> NotionDatabasePage:
+    _id = data["id"]
+    _object = data["object"]
+    values = {}
+    types = {}
+    properties: dict = data["properties"]
+    for key, value in properties.items():
+        _type: str = value["type"]
+        values[key] = parser_database_object_data(_type, value)
+        types[key] = _type
+    return NotionDatabasePage(api_key, _id, _object, values, types)
 
