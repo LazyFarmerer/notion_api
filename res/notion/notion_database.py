@@ -6,6 +6,8 @@ import requests
 
 from ..abstract.parent import NotionBase
 from ..abstract.interface import Write, Read
+from .notion_data_source import DataSource, _parse_data_sources
+from ..notion_object.database_object import DatabaseObject
 
 
 class NotionDatabase(NotionBase, Write, Read):
@@ -15,7 +17,7 @@ class NotionDatabase(NotionBase, Write, Read):
         self._data_sources: list[DataSource] = []
 
     @override
-    def write(self, properties_object: NotionObject):
+    def write(self, properties_object: DatabaseObject):
         url = "https://api.notion.com/v1/pages"
         headers = self._add_headers("2025-09-03")
 
@@ -64,6 +66,8 @@ class NotionDatabase(NotionBase, Write, Read):
         stringlist = [str(source) for source in self._data_sources]
 
         if 3 < data_sources_count:
-            return f"[데이터베이스: {",".join(stringlist[:3])}...]"
+            joined = ",".join(stringlist[:3])
+            return f"[데이터베이스: {joined}...]"
 
-        return f"[데이터베이스: {",".join(stringlist)}]"
+        joined = ",".join(stringlist)
+        return f"[데이터베이스: {joined}]"

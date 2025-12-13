@@ -118,7 +118,9 @@ class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
         stringlist = [str(source) for source in self._datas]
 
         if 3 < data_sources_count:
-            return f"[데이터베이스: {",".join(stringlist[:3])}...]"
+            joined = ",".join(stringlist[:3])
+            return f"[데이터베이스: {joined}...]"
 
-        return f"[데이터베이스: {",".join(stringlist)}]"
+        joined = ",".join(stringlist)
+        return f"[데이터베이스: {joined}]"
 
