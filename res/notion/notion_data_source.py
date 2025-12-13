@@ -5,7 +5,7 @@ import requests
 
 from ..abstract.parent import NotionBase
 from ..abstract.interface import Write, Read
-from .notion_database_page import DatabasePage, _parser_page
+from .notion_database_page import NotionDatabasePage, _parser_page
 
 
 class DataSource(NotionBase, Read):
@@ -13,7 +13,7 @@ class DataSource(NotionBase, Read):
     def __init__(self, api_key: str, source_id: str, object: str, name: str) -> None:
         super().__init__(api_key, source_id, object)
         self.name = name
-        self._data: list[DatabasePage] = []
+        self._data: list[NotionDatabasePage] = []
 
 
     @override
@@ -26,8 +26,8 @@ class DataSource(NotionBase, Read):
         self._data = self._parser(response.json())
         return self
 
-    def append_page(self, page: DatabasePage | dict):
-        if isinstance(page, DatabasePage):
+    def append_page(self, page: NotionDatabasePage | dict):
+        if isinstance(page, NotionDatabasePage):
             self._data.append(page)
 
     def _parser(self, response_data: dict):

@@ -24,22 +24,22 @@ class NotionBlock(NotionBase):
     #     return super().remove()
 
 
-def _parser_block(api_key: str, data: dict) -> NotionBlock:
+def _parser_block(api_key: str, data: dict): # -> NotionBlock:
     _id: str = data["id"]
     _object: str = data["object"]
     _type: str = data["type"]
-    notiono_bject_class = notion_object_instance_register.dict.get(_type)
+    # notiono_bject_class = notion_object_instance_register.dict.get(_type)
     # 있으면 있는대로, 없으면 None
-    if notiono_bject_class is None:
-        _data = None
-    else:
-        _data = notiono_bject_class.get( data )
+    # if notiono_bject_class is None:
+    #     _data = None
+    # else:
+    #     _data = notiono_bject_class.get( data )
 
-    _value = {
-        "type": _type,
-        _type: _data
-    }
-    return NotionBlock(api_key, _id, _object, _value)
+    # _value = {
+    #     "type": _type,
+    #     _type: _data
+    # }
+    # return NotionBlock(api_key, _id, _object, _value)
 
 
 

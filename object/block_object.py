@@ -4,7 +4,7 @@
 # https://developers.notion.com/reference/block
 
 
-from ..abstract.value import DictValueBase
+from ..res.abstract.value import DictValueBase
 
 
 class BlockObjectBase:

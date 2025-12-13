@@ -5,7 +5,7 @@ from typing import Any, Literal
 from sys import _getframe as sys_getframe
 from re import sub as re_sub
 
-from ..abstract.value import DictValueBase
+from ..res.abstract.value import DictValueBase
 
 # 관련 정보는 여기
 # 여기를 기준으로 만들어짐

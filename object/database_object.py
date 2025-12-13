@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from ..abstract.value import DictValueBase
+from ..res.abstract.value import DictValueBase
 
 
 # 관련 정보는 여기

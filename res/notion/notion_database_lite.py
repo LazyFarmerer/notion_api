@@ -6,9 +6,10 @@ from ..abstract.parent import NotionBase
 from ..abstract.interface import Write, Read, Update, Remove
 from .notion_database_page import NotionDatabasePage, _parser_page
 
-from ..notion_object.database_object import DatabaseObject
-from ..query.sort import SortBase
-from ..query.filter import FilterBase
+
+from ...object.database_object import DatabaseObject
+from ...query.filter import FilterBase
+from ...query.sort import SortBase
 
 class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
     @override
