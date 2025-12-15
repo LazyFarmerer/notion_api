@@ -1,7 +1,7 @@
 
 from typing import Literal
 
-from ..res.abstract.value import ListValueBase
+from ..abstract.value import ListValueBase
 
 
 class SortBase(ListValueBase): ...

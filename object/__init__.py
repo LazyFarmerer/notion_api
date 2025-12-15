@@ -1,6 +1,6 @@
 
-from .block_object import BlockObject
-from .database_object import DatabaseObject
+from ..res.object.block_object import BlockObject
+from ..res.object.database_object import DatabaseObject
 
 __all__ = [
     "BlockObject",

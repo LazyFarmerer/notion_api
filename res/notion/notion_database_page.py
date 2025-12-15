@@ -6,8 +6,8 @@ import requests
 from ..abstract.parent import NotionBase
 from ..abstract.interface import Update, Remove
 
-from ..notion_object.database_object import parser_database_object_data
-from ..notion_object.database_object import DatabaseObject
+from ..object.database_object import parser_database_object_data
+from ..object.database_object import DatabaseObject
 
 
 class NotionDatabasePage(NotionBase, Update, Remove):

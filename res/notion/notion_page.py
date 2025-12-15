@@ -5,8 +5,8 @@ import requests
 
 from ..abstract.parent import NotionBase
 from ..abstract.interface import Write, Read
-from .notion_block import NotionBlock
-from ..notion_object.block_object import BlockObject, parser_database_object_data
+from .notion_block import NotionBlock, _parser_block
+from ..object.block_object import BlockObject
 
 
 class NotionPage(NotionBase, Write, Read):
@@ -27,24 +27,29 @@ class NotionPage(NotionBase, Write, Read):
         }
 
         response = requests.patch(url, json=payload, headers=headers)
-        print(response.json())
         notion_blocks = self._parse(response.json())
         self._blocks.extend(notion_blocks)
 
     @override
     def read(self):
         url = f"https://api.notion.com/v1/blocks/{self.id}/children?page_size=100"
-        headers = self._add_headers("2022-06-28")
+        headers = self._add_headers("2025-09-03")
 
         response = requests.get(url, headers=headers)
         self._blocks = self._parse(response.json())
-        return response
+        return self._blocks
 
     def _parse(self, response_data: dict) -> list[NotionBlock]:
         _blocks_data: list = response_data["results"]
         result: list[NotionBlock] = []
         for block_data in _blocks_data:
-            notion_block = parser_database_object_data(self.api_key, block_data)
-            print(notion_block)
+            notion_block = _parser_block(self.api_key, block_data)
             result.append(notion_block)
         return result
+
+    @property
+    def value(self) -> list[NotionBlock]:
+        return self._blocks
+
+    def __repr__(self) -> str:
+        return f"<노션페이지 id: {self.id} 블럭들: {len(self._blocks)}>"
