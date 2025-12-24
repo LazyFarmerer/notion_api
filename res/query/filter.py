@@ -29,6 +29,14 @@ class FilterBase(DictValueBase):
         class_name = self.__class__.__name__.replace("Filter", "")
         self._filter_name = _camel_to_snake(class_name)
 
+# 아래 4개는 수식 필터 때문에 사용
+# 타입 확인 해야지 ...
+class CheckboxFilterBase(FilterBase): ...
+class DateFilterBase(FilterBase): ...
+class NumberFilterBase(FilterBase): ...
+class RichTextFilterBase(FilterBase): ...
+
+
 class CheckboxFilter(FilterBase):
     def equals(self, property_: str, value: bool):
         """속성 값이 제공된 값과 정확히 일치하는지 여부를 나타냅니다.
@@ -37,7 +45,7 @@ class CheckboxFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return CheckboxFilterBase(self._value)
 
     def does_not_equal(self, property_: str, value: bool):
         """속성 값이 제공된 값과 다른지 여부를 나타냅니다.
@@ -46,7 +54,7 @@ class CheckboxFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return CheckboxFilterBase(self._value)
 
 
 class DateFilter(FilterBase):
@@ -59,7 +67,7 @@ class DateFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
 
     def before(self, property_: str, value: str):
         """날짜 속성 값과 비교할 값입니다.
@@ -70,7 +78,7 @@ class DateFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
 
     def equals(self, property_: str, value: str):
         """날짜 속성 값과 비교할 값입니다.
@@ -81,7 +89,7 @@ class DateFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
 
     def is_empty(self, property_: str):
         """날짜 속성 값과 비교할 값입니다.
@@ -90,7 +98,7 @@ class DateFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
 
     def is_not_empty(self, property_: str):
         """날짜 속성 값과 비교할 값입니다.
@@ -99,26 +107,26 @@ class DateFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
 
     def next_month(self, property_: str):
         """날짜 속성 값이 다음 달 이내인 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
     def next_week(self, property_: str):
         """날짜 속성 값이 다음 주 이내인 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
     def next_year(self, property_: str):
         """날짜 속성 값이 내년 이내인 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
     def on_or_after(self, property_: str, value: str):
         """날짜 속성 값과 비교할 값입니다.
 
@@ -128,7 +136,7 @@ class DateFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
 
     def on_or_before(self, property_: str, value: str):
         """날짜 속성 값과 비교할 값입니다.
@@ -139,32 +147,32 @@ class DateFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
 
     def past_month(self, property_: str):
         """지난달 이내의 부동산 가치가 있는 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
     def past_week(self, property_: str):
         """지난주 이내의 속성 값이 포함된 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
     def past_year(self, property_: str):
         """해당 속성 가치가 지난 1년 이내인 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
     def this_week(self, property_: str):
         """이번 주에 속성 값이 있는 데이터 소스 항목으로 결과를 제한하는 필터입니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, {})
         self._value.update(result)
-        return FilterBase(self._value)
+        return DateFilterBase(self._value)
 
 class FilesFilter(FilterBase):
     def is_empty(self, property_: str):
@@ -187,7 +195,7 @@ class FilesFilter(FilterBase):
 
 
 class FormulaFilter(FilterBase):
-    def checkbox(self, property_: str, value: CheckboxFilter):
+    def checkbox(self, property_: str, value: CheckboxFilterBase):
         """수식 결과를 비교할 체크박스 필터 조건입니다.
 
         수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
@@ -197,7 +205,7 @@ class FormulaFilter(FilterBase):
         self._value.update(result)
         return FilterBase(self._value)
 
-    def date(self, property_: str, value: DateFilter):
+    def date(self, property_: str, value: DateFilterBase):
         """수식 결과를 비교할 날짜 필터 조건입니다.
 
         수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
@@ -207,7 +215,7 @@ class FormulaFilter(FilterBase):
         self._value.update(result)
         return FilterBase(self._value)
 
-    def number(self, property_: str, value: NumberFilter):
+    def number(self, property_: str, value: NumberFilterBase):
         """수식 결과를 비교할 숫자 필터 조건입니다.
 
         수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
@@ -217,7 +225,7 @@ class FormulaFilter(FilterBase):
         self._value.update(result)
         return FilterBase(self._value)
 
-    def string(self, property_: str, value: RichTextFilter):
+    def string(self, property_: str, value: RichTextFilterBase):
         """수식 결과를 비교할 서식 있는 텍스트 필터 조건입니다.
 
         수식 결과가 제공된 조건과 일치하는 데이터 소스 항목을 반환합니다."""
@@ -274,7 +282,7 @@ class NumberFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return NumberFilterBase(self._value)
 
     def equals(self, property_: str, value: float):
         """숫자 속성 값을 비교할 대상입니다.
@@ -283,7 +291,7 @@ class NumberFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return NumberFilterBase(self._value)
 
     def greater_than(self, property_: str, value: float):
         """숫자 속성 값을 비교할 대상입니다.
@@ -292,7 +300,7 @@ class NumberFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return NumberFilterBase(self._value)
 
     def greater_than_or_equal_to(self, property_: str, value: float):
         """숫자 속성 값을 비교할 대상입니다.
@@ -301,7 +309,7 @@ class NumberFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return NumberFilterBase(self._value)
 
     def is_empty(self, property_: str):
         """속성 값이 비어 있는지 여부를 나타냅니다.
@@ -310,7 +318,7 @@ class NumberFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return NumberFilterBase(self._value)
 
     def is_not_empty(self, property_: str):
         """숫자 속성 값이 비어 있는지 여부를 나타냅니다.
@@ -319,7 +327,7 @@ class NumberFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return NumberFilterBase(self._value)
 
     def less_than(self, property_: str, value: float):
         """숫자 속성 값을 비교할 대상입니다.
@@ -328,7 +336,7 @@ class NumberFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return NumberFilterBase(self._value)
 
     def less_than_or_equal_to(self, property_: str, value: float):
         """숫자 속성 값을 비교할 대상입니다.
@@ -337,7 +345,7 @@ class NumberFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return NumberFilterBase(self._value)
 
 
 class PeopleFilter(FilterBase):
@@ -424,7 +432,7 @@ class RichTextFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return RichTextFilterBase(self._value)
 
     def does_not_contain(self, property_: str, value: str):
         """텍스트 속성 값을 비교할 대상입니다.
@@ -433,7 +441,7 @@ class RichTextFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return RichTextFilterBase(self._value)
 
     def does_not_equal(self, property_: str, value: str):
         """텍스트 속성 값을 비교할 대상입니다.
@@ -442,7 +450,7 @@ class RichTextFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return RichTextFilterBase(self._value)
 
     def ends_with(self, property_: str, value: str):
         """텍스트 속성 값을 비교할 대상입니다.
@@ -451,7 +459,7 @@ class RichTextFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return RichTextFilterBase(self._value)
 
     def equals(self, property_: str, value: str):
         """텍스트 속성 값을 비교할 대상입니다.
@@ -460,7 +468,7 @@ class RichTextFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return RichTextFilterBase(self._value)
 
     def is_empty(self, property_: str):
         """텍스트 속성 값에 데이터가 포함되어 있지 않은지 여부를 나타냅니다.
@@ -469,7 +477,7 @@ class RichTextFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return RichTextFilterBase(self._value)
 
     def is_not_empty(self, property_: str):
         """텍스트 속성 값에 데이터가 포함되어 있는지 여부를 나타냅니다.
@@ -478,14 +486,14 @@ class RichTextFilter(FilterBase):
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, True)
         self._value.update(result)
-        return FilterBase(self._value)
+        return RichTextFilterBase(self._value)
 
     def starts_with(self, property_: str, value: str):
         """텍스트 속성 값을 비교할 대상입니다. 제공된 값으로 시작하는 텍스트 속성 값을 가진 데이터 소스 항목을 반환합니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
-        return FilterBase(self._value)
+        return RichTextFilterBase(self._value)
 
 
 # class RollupFilter(FilterBase): ... # 일단 패스
