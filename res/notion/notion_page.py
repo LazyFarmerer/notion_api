@@ -16,19 +16,47 @@ class NotionPage(NotionBase, Write, Read):
         self._blocks: list[NotionBlock] = []
 
     @override
-    def write(self, properties_object: BlockObject, *args: BlockObject):
+    def write(self, properties_object: BlockObject):
         url = f"https://api.notion.com/v1/blocks/{self.id}/children"
         headers = self._add_headers("2025-09-03")
 
-        notion_objects = [ properties_object.value ]
-        notion_objects.extend( [ notion_obj.value for notion_obj in args ] )
         payload = {
-            "children": notion_objects
+            "children": properties_object.value
         }
 
         response = requests.patch(url, json=payload, headers=headers)
         notion_blocks = self._parse(response.json())
         self._blocks.extend(notion_blocks)
+
+    def child_page(self, title: str):
+        """하위페이지 만들기
+
+        새롭게 만들어진 페이지를 리턴"""
+        url = f"https://api.notion.com/v1/pages"
+        headers = self._add_headers("2025-09-03")
+
+        payload = {
+            "parent": {
+                "page_id": self.id
+            },
+            "properties": {
+                "title": [
+                    {
+                        "text": {
+                            "content": title
+                        }
+                    }
+                ]
+            }
+        }
+
+        response = requests.post(url, json=payload, headers=headers)
+        if (response.ok == False):
+            raise ValueError("페이지 만들기 실패")
+
+        page_id = response.json()["id"]
+        _object = response.json()["object"]
+        return NotionPage(self.api_key, page_id, _object)
 
     @override
     def read(self):

@@ -21,16 +21,15 @@ class NotionBlock(NotionBase, Update, Remove):
         url = f"https://api.notion.com/v1/blocks/{self.id}"
         header = self._add_headers("2025-09-03")
 
-        if hasattr(BlockObject(), self._type):
-            data = getattr(BlockObject(), self._type)(value)
-        payload = { self._type: data }
+        if hasattr(BlockObject(), self._type) == False:
+            raise ValueError(f"타입 확인해보기: type= {self._type}")
+        payload = getattr(BlockObject(), self._type)(value)
 
         response = requests.patch(url, json=payload, headers=header)
         if (response.ok == False):
             raise ValueError(response.text)
 
         return self
-
 
     @override
     def remove(self) -> bool:

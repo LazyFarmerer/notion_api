@@ -3,9 +3,22 @@
 # 여기 참고하기
 # https://developers.notion.com/reference/block
 
+from typing import Literal
+from ..abstract.value import ListValueBase
 
-from ..abstract.value import DictValueBase
 
+text_color_type = Literal["blue", "blue_background",
+                        "brown", "brown_background",
+                        "default",
+                        "gray", "gray_background",
+                        "green", "green_background",
+                        "orange", "orange_background",
+                        "yellow", "yellow_background"
+                        "green",
+                        "pink", "pink_background",
+                        "purple", "purple_background",
+                        "red", "red_background"
+                ]
 
 class BlockObjectBase:
     pass
@@ -103,14 +116,17 @@ class BulletedListItemBlockObject:
 
 
 class CalloutBlockObject:
-    def object(self, value: str | None) -> dict:
-        print("callout 정보")
-        print(value)
-        return TextObject().object(value)
-    def get(self, value: dict) -> str | None:
-        print("callout 정보")
-        print(value)
-        return TextObject().get(value)
+    def object(self, value: str | None, *, icon: str="💡", color: text_color_type="gray_background") -> dict:
+        result = { "callout": TextObject().object(value) }
+        result["callout"]["icon"] = { "emoji": icon, "type": "emoji"}
+        result["callout"]["color"] = color
+        return result
+    def get(self, value: dict) -> dict | None:
+        icon_type = value["icon"]["type"] # 어지간해선 emoji 인듯
+        return {
+            "icon": value["icon"][icon_type],
+            "text": TextObject().get(value)
+        }
 
 
 class ChildDatabaseBlockObject:
@@ -128,11 +144,10 @@ class ChildPageBlockObject:
     def object(self, value: str | None) -> dict:
         print("child_page 정보")
         print(value)
-        return {}
+        result = {"child_page": { "title": value }}
+        return result
     def get(self, value: dict) -> dict:
-        print("child_page 정보")
-        print(value)
-        return {}
+        return value["title"]
 
 
 class CodeBlockObject:
@@ -255,8 +270,10 @@ class NumberedListItemBlockObject:
 
 
 class ParagraphBlockObject:
-    def object(self, value: str | None) -> dict:
-        return TextObject().object(value)
+    def object(self, value: str | None, *, color: text_color_type="default") -> dict:
+        result = { "paragraph": TextObject().object(value) }
+        result["paragraph"]["color"] = color
+        return result
     def get(self, value: dict) -> str | None:
         return Heading123BlockObject().get(value)
 
@@ -338,65 +355,123 @@ class VideoBlockObject:
         return value["video"]["external"]["url"]
 
 
-class BlockObject(DictValueBase):
+class BlockObject(ListValueBase):
     def audio(self, url: str | None):
-        return AudioBlockObject().object(url)
+        result = AudioBlockObject().object(url)
+        self._value.append(result)
+        return self
     def bookmark(self, value: str | None):
-        return BookmarkBlockObject().object(value)
+        result = BookmarkBlockObject().object(value)
+        self._value.append(result)
+        return self
     def breadcrumb(self, value: str | None):
-        return BreadcrumbBlockObject().object(value)
+        result = BreadcrumbBlockObject().object(value)
+        self._value.append(result)
+        return self
     def bulleted_list_item(self, value: str | None):
-        return BulletedListItemBlockObject().object(value)
-    def callout(self, value: str | None):
-        return CalloutBlockObject().object(value)
+        result = BulletedListItemBlockObject().object(value)
+        self._value.append(result)
+        return self
+    def callout(self, value: str | None, *, icon: str="💡", color: text_color_type = "gray_background"):
+        result = CalloutBlockObject().object(value, icon=icon, color=color)
+        self._value.append(result)
+        return self
     def child_database(self, value: str | None):
-        return ChildDatabaseBlockObject().object(value)
-    def child_page(self, value: str | None):
-        return ChildPageBlockObject().object(value)
+        result = ChildDatabaseBlockObject().object(value)
+        self._value.append(result)
+        return self
+    # def child_page(self, value: str | None):
+        # result = ChildPageBlockObject().object(value)
+        # self._value.append(result)
+        # return self
     def code(self, value: str | None):
-        return CodeBlockObject().object(value)
+        result = CodeBlockObject().object(value)
+        self._value.append(result)
+        return self
     def column(self, value: str | None):
-        return ColumnListAndColumnBlockObject().object(value)
+        result = ColumnListAndColumnBlockObject().object(value)
+        self._value.append(result)
+        return self
     def column_list(self, value: str | None):
-        return ColumnListAndColumnBlockObject().object(value)
+        result = ColumnListAndColumnBlockObject().object(value)
+        self._value.append(result)
+        return self
     def divider(self, value: str | None):
-        return DividerBlockObject().object(value)
+        result = DividerBlockObject().object(value)
+        self._value.append(result)
+        return self
     def embed(self, url: str | None):
-        return EmbedBlockObject().object(url)
+        result = EmbedBlockObject().object(url)
+        self._value.append(result)
+        return self
     def equation(self, value: str | None):
-        return EquationBlockObject().object(value)
+        result = EquationBlockObject().object(value)
+        self._value.append(result)
+        return self
     def file(self, url: str | None):
-        return FileBlockObject().object(url)
+        result = FileBlockObject().object(url)
+        self._value.append(result)
+        return self
     def heading_1(self, value: str | None):
-        return Heading123BlockObject().object(value)
+        result = Heading123BlockObject().object(value)
+        self._value.append(result)
+        return self
     def heading_2(self, value: str | None):
-        return Heading123BlockObject().object(value)
+        result = Heading123BlockObject().object(value)
+        self._value.append(result)
+        return self
     def heading_3(self, value: str | None):
-        return Heading123BlockObject().object(value)
+        result = Heading123BlockObject().object(value)
+        self._value.append(result)
+        return self
     def image(self, value: str | None):
-        return ImageBlockObject().object(value)
+        result = ImageBlockObject().object(value)
+        self._value.append(result)
+        return self
     def link_preview(self, value: str | None):
-        return LinkPreviewBlockObject().object(value)
+        result = LinkPreviewBlockObject().object(value)
+        self._value.append(result)
+        return self
     def mention(self, value: str | None):
-        return MentionBlockObject().object(value)
+        result = MentionBlockObject().object(value)
+        self._value.append(result)
+        return self
     def numbered_list_item(self, value: str | None):
-        return NumberedListItemBlockObject().object(value)
-    def paragraph(self, value: str | None):
-        return ParagraphBlockObject().object(value)
+        result = NumberedListItemBlockObject().object(value)
+        self._value.append(result)
+        return self
+    def text(self, value: str | None, *, color: text_color_type="default"):
+        result = ParagraphBlockObject().object(value, color=color)
+        self._value.append(result)
+        return self
     def pdf(self, value: str | None):
-        return PDFBlockObject().object(value)
+        result = PDFBlockObject().object(value)
+        self._value.append(result)
+        return self
     def quote(self, value: str | None):
-        return QuoteBlockObject().object(value)
+        result = QuoteBlockObject().object(value)
+        self._value.append(result)
+        return self
     def synced_block(self, value: str | None):
-        return SyncedBlockBlockObject().object(value)
+        result = SyncedBlockBlockObject().object(value)
+        self._value.append(result)
+        return self
     def table(self, value: str | None):
-        return TableBlockObject().object(value)
+        result = TableBlockObject().object(value)
+        self._value.append(result)
+        return self
     def to_do(self, value: str | None):
-        return ToDoBlockObject().object(value)
+        result = ToDoBlockObject().object(value)
+        self._value.append(result)
+        return self
     def toggle(self, value: str | None):
-        return ToggleBlocksBlockObject().object(value)
+        result = ToggleBlocksBlockObject().object(value)
+        self._value.append(result)
+        return self
     def video(self, url: str | None):
-        return VideoBlockObject().object(url)
+        result = VideoBlockObject().object(url)
+        self._value.append(result)
+        return self
 
 def parser_database_object_data(type_: str, data: dict):
 
