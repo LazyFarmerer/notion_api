@@ -180,7 +180,7 @@ class DividerBlockObject:
     def object(self, value: str | None) -> dict:
         print("divider 정보")
         print(value)
-        return {}
+        return { "type": "divider", "divider": {} }
     def get(self, value: dict) -> dict:
         print("divider 정보")
         print(value)

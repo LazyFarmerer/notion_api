@@ -7,6 +7,7 @@ from ..abstract.interface import Write, Read, Update, Remove
 from .notion_database_page import NotionDatabasePage, _parser_page
 
 from ..object.database_object import DatabaseObject
+from ..object.block_object import BlockObject
 from ..query.filter import FilterBase
 from ..query.sort import SortBase
 
@@ -17,14 +18,22 @@ class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
         self._datas: list[NotionDatabasePage] = []
 
     @override
-    def write(self, write_properties_object_: DatabaseObject):
+    def write(self, write_properties_object_: DatabaseObject | dict, children: BlockObject | list[dict] | None = None):
         url = "https://api.notion.com/v1/pages"
         headers = self._add_headers("2022-06-28")
 
+        if isinstance(write_properties_object_, DatabaseObject):
+            write_properties_object_ = write_properties_object_.value
+
         payload = {
             "parent": { "database_id": self.id },
-            "properties": write_properties_object_.value
+            "properties": write_properties_object_,
         }
+
+        if children is not None:
+            if isinstance(children, BlockObject):
+                children = children.value
+            payload["children"] = children
 
         response = requests.post(url, json=payload, headers=headers)
         if not response.ok:
