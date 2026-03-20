@@ -18,7 +18,7 @@ class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
         self._datas: list[NotionDatabasePage] = []
 
     @override
-    def write(self, write_properties_object_: DatabaseObject | dict, children: BlockObject | list[dict] | None = None):
+    def write(self, write_properties_object_: DatabaseObject | dict):
         url = "https://api.notion.com/v1/pages"
         headers = self._add_headers("2022-06-28")
 
@@ -30,9 +30,10 @@ class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
             "properties": write_properties_object_,
         }
 
-        if children is not None:
-            if isinstance(children, BlockObject):
-                children = children.value
+        # 만약 children이 있다면, 지우고 payload에 추가
+        if "children" in write_properties_object_:
+            children = write_properties_object_.get("children")
+            del write_properties_object_["children"] # children은 properties에서 제거
             payload["children"] = children
 
         response = requests.post(url, json=payload, headers=headers)
@@ -44,7 +45,7 @@ class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
         return new_page
 
     @override
-    def read(self, *, filter: FilterBase | dict | None = None, sort: SortBase | dict | None = None, page_size: int=100):
+    def read(self, *, filter: FilterBase | dict | None = None, sort: SortBase | dict | None = None, page_size: int=100) -> list[NotionDatabasePage]:
         """
         ㅁㄴㅇㅁㄴㅇ
 
@@ -74,6 +75,7 @@ class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
             raise ValueError(response.json())
         
         self._datas = self._parse(response.json())
+        return self._datas
 
     @overload
     def update(self, page_or_index: NotionDatabasePage, update_properties_object_: DatabaseObject):

@@ -6,7 +6,7 @@ import requests
 from ..abstract.parent import NotionBase
 from ..abstract.interface import Update, Remove
 
-from ..object.block_object import parser_database_object_data, BlockObject
+from ..object.block_object import parser_block_object_data, BlockObject
 
 
 class NotionBlock(NotionBase, Update, Remove):
@@ -59,7 +59,7 @@ def _parser_block(api_key: str, data: dict): # -> NotionBlock:
     _id: str = data["id"]
     _object: str = data["object"]
     _type: str = data["type"]
-    value = parser_database_object_data(_type, data[_type])
+    value = parser_block_object_data(_type, data[_type])
     return NotionBlock(api_key, _id, _object, _type, value)
 
 

@@ -473,7 +473,7 @@ class BlockObject(ListValueBase):
         self._value.append(result)
         return self
 
-def parser_database_object_data(type_: str, data: dict):
+def parser_block_object_data(type_: str, data: dict):
 
     match type_:
         case "audio":
@@ -528,6 +528,8 @@ def parser_database_object_data(type_: str, data: dict):
             return ToggleBlocksBlockObject().get(data)
         case "video":
             return VideoBlockObject().get(data)
-    
-    return data
+        case _:
+            print(f"이건 무슨 타입?: {type_}")
+            print(f"이건 그래서?: {data}")
+            return {}
 

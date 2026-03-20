@@ -3,6 +3,7 @@
 from typing import Any
 
 from ..abstract.value import DictValueBase
+from .block_object import BlockObject
 
 
 # 관련 정보는 여기
@@ -322,6 +323,13 @@ class DatabaseObject(DictValueBase):
         """웹 주소를 설명하는 문자열입니다."""
         result = { properties : UrlDatabaseObject().object(value) }
         self._value.update(result)
+        return self
+
+    def children(self, blockObject: BlockObject | list[dict]):
+        """children"""
+        if isinstance(blockObject, BlockObject):
+            blockObject = blockObject.value
+        self._value["children"] = blockObject
         return self
 
 
