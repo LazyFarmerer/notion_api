@@ -1,7 +1,9 @@
 
 from typing import Literal
+from abc import ABC
 
-class NotionBase:
+
+class NotionBase(ABC):
     def __init__(self, api_key: str, id: str, object: str):
         self.api_key = api_key
         self.id = id

@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 import requests
 
 
-class NotionBase:
+class NotionBase(ABC):
     def __init__(self, api_key: str, id: str, object: str):
         self.api_key = api_key
         self.id = id
@@ -51,7 +51,7 @@ class Remove(ABC):
         raise NotImplementedError
 
 
-class DictValueBase:
+class DictValueBase(ABC):
     def __init__(self, value: dict | None = None) -> None:
         if value is None:
             self._value = {}
@@ -64,7 +64,7 @@ class DictValueBase:
         return self._value
 
 
-class ListValueBase:
+class ListValueBase(ABC):
     def __init__(self, value: list | None = None) -> None:
         if value is None:
             self._value = []

@@ -1,6 +1,7 @@
 
+from abc import ABC
 
-class DictValueBase:
+class DictValueBase(ABC):
     def __init__(self, value: dict | None = None) -> None:
         self._value = value if isinstance(value, dict) else {}
 
@@ -9,7 +10,7 @@ class DictValueBase:
         return self._value
 
 
-class ListValueBase:
+class ListValueBase(ABC):
     def __init__(self, value: list | None = None) -> None:
         self._value = value if isinstance(value, list) else []
 
