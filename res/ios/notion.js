@@ -689,7 +689,7 @@ class FilesDatabaseObject {
     };
   }
   get(value) {
-    if (!value["files"]) {
+    if (!value["files"] || value["files"].length === 0) {
       return null;
     }
     return {
