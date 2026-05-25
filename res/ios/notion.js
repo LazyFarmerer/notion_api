@@ -1838,7 +1838,8 @@ class NotionDatabasePage extends NotionBase {
   async remove() {
     const url = `https://api.notion.com/v1/pages/${this.id}`;
     const headers = this._addHeaders("2025-09-03");
-    const payload = { "archived": false }; // 원본 파이썬 로직 유지
+    const payload = { "archived": true }; // 원본 파이썬 로직 유지
+    // 삭제는 archived 를 true 로, 되살리고 싶다면 archived 를 false 로
 
     const response = await fetch(url, {
       method: "PATCH",

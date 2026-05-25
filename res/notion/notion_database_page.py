@@ -44,12 +44,12 @@ class NotionDatabasePage(NotionBase, Update, Remove):
         url = f"https://api.notion.com/v1/pages/{self.id}"
         headers = self._add_headers("2025-09-03")
         payload = {
-            "archived": False
+            "archived": True
         }
+        # 삭제는 archived 를 True 로, 되살리고 싶다면 archived 를 False 로
         # self.archived = True
 
         response = requests.patch(url, json=payload, headers=headers)
-        # 되살리고 싶다면 archived 를 True 로
         return response.ok
 
     @property
