@@ -1847,7 +1847,12 @@ class NotionDatabasePage extends NotionBase {
       body: JSON.stringify(payload)
     });
 
-    return response.ok;
+    if (!response.ok) {
+        throw new Error(`오류가 남: ${response.json()}`);
+    }
+
+    const responseData = await response.json();
+    return responseData;
   }
 
   get value() {
