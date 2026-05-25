@@ -1262,7 +1262,7 @@ class PeopleFilter(FilterBase):
     def contains(self, property_: str, value: str): # UUIDv4 ex) "6c574cee-ca68-41c8-86e0-1b9e992689fb"
         """people 속성 값과 비교할 값입니다.
 
-        people 속성 값에 제공된 .이 포함된 데이터 소스 항목을 반환합니다."""
+        people 속성 값에 제공된 사람이 포함된 데이터 소스 항목을 반환합니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
@@ -1271,7 +1271,7 @@ class PeopleFilter(FilterBase):
     def does_not_contain(self, property_: str, value: str): # UUIDv4 ex) "6c574cee-ca68-41c8-86e0-1b9e992689fb"
         """people 속성 값과 비교할 값입니다.
 
-        people 속성 값에 제공된 .이 포함되지 않은 데이터 소스 항목을 반환합니다."""
+        people 속성 값에 제공된 사람이 포함되지 않은 데이터 소스 항목을 반환합니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
@@ -1300,7 +1300,7 @@ class RelationFilter(FilterBase):
     def contains(self, property_: str, value: str): # UUIDv4 ex) "6c574cee-ca68-41c8-86e0-1b9e992689fb"
         """관계 속성 값과 비교할 값입니다.
 
-        관계 속성 값에 제공된 .이 포함된 데이터 소스 항목을 반환합니다."""
+        관계 속성 값에 제공된 페이지가 포함된 데이터 소스 항목을 반환합니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
@@ -1309,7 +1309,7 @@ class RelationFilter(FilterBase):
     def does_not_contain(self, property_: str, value: str):
         """관계 속성 값과 비교할 값입니다.
 
-        관계 속성 값에 제공된 .이 포함되지 않은 항목을 반환합니다."""
+        관계 속성 값에 제공된 페이지가 포함되지 않은 항목을 반환합니다."""
         method_name = sys_getframe(0).f_code.co_name
         result = _return_value(property_, self._filter_name, method_name, value)
         self._value.update(result)
