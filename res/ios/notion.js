@@ -2,6 +2,39 @@
 
 
 //#region 1. 추상 클래스 및 기반 인터페이스 정의
+// scriptable 어플용
+async function scriptableProvider({ url, method, headers, body }) {
+  const req = new Request(url);
+  req.method = method;
+  req.headers = headers;
+  if (body) req.bodyString = JSON.stringify(body);
+
+  const resJson = await req.loadJSON();
+  return {
+    ok: req.response.statusCode >= 200 && req.response.statusCode < 300,
+    json: async () => resJson
+  };
+}
+// 템퍼몽키 용
+function tampermonkeyProvider({ url, method, headers, body }) {
+  return new Promise((resolve, reject) => {
+    GM_xmlhttpRequest({
+      method: method,
+      url: url,
+      headers: headers,
+      data: body ? JSON.stringify(body) : null,
+      onload: (res) => {
+        resolve({
+          ok: res.status >= 200 && res.status < 300,
+          json: async () => JSON.parse(res.responseText)
+        });
+      },
+      onerror: (err) => reject(err)
+    });
+  });
+}
+
+
 // 파이썬의 NotionBase 역할
 class NotionBase {
   /**
@@ -9,8 +42,9 @@ class NotionBase {
    * @param {string} apiKey 
    * @param {string} id 
    * @param {string} object 
+   * @param {function?} requestProvider 
    */
-  constructor(apiKey, id, object) {
+  constructor(apiKey, id, object, requestProvider = null) {
     if (this.constructor === NotionBase) {
         throw new TypeError("추상 클래스 NotionBase는 직접 인스턴스화할 수 없습니다.");
     }
@@ -18,6 +52,12 @@ class NotionBase {
     this.id = id;
     this.object = object;
     this.archived = false; // 삭제했는지에 관한 정보
+    this.requestProvider = requestProvider;
+    if (this.requestProvider === null) {
+      this.requestProvider = (typeof GM_xmlhttpRequest === "function")
+                              ? tampermonkeyProvider
+                              : scriptableProvider
+    }
   }
 
   /**
@@ -1797,8 +1837,8 @@ class _Sort extends SortBase {
 
 //#region 5. 핵심 API 실행 클라이언트 정의
 class NotionDatabasePage extends NotionBase {
-  constructor(apiKey, id, object, values, types) {
-    super(apiKey, id, object);
+  constructor(apiKey, id, object, values, types, requestProvider = null) {
+    super(apiKey, id, object, requestProvider);
     this._values = values;
     this._types = types;
   }
@@ -1815,10 +1855,11 @@ class NotionDatabasePage extends NotionBase {
       "properties": updateProperties
     };
 
-    const response = await fetch(url, {
+    const response = await this.requestProvider({
+      url: url,
       method: "PATCH",
       headers: headers,
-      body: JSON.stringify(payload)
+      body: payload
     });
 
     if (!response.ok) {
@@ -1841,10 +1882,11 @@ class NotionDatabasePage extends NotionBase {
     const payload = { "archived": true }; // 원본 파이썬 로직 유지
     // 삭제는 archived 를 true 로, 되살리고 싶다면 archived 를 false 로
 
-    const response = await fetch(url, {
+    const response = await this.requestProvider({
+      url: url,
       method: "PATCH",
       headers: headers,
-      body: JSON.stringify(payload)
+      body: payload
     });
 
     if (!response.ok) {
@@ -1891,8 +1933,8 @@ function _parserPage(apiKey, data) {
 
 
 class NotionDatabaseLite extends NotionBase {
-  constructor(key, DB_id) {
-    super(key, DB_id, "database");
+  constructor(key, DB_id, requestProvider = null) {
+    super(key, DB_id, "database", requestProvider);
     this._datas = [];
   }
 
@@ -1918,10 +1960,11 @@ class NotionDatabaseLite extends NotionBase {
       payload["children"] = children;
     }
 
-    const response = await fetch(url, {
+    const response = await this.requestProvider({
+      url: url,
       method: "POST",
       headers: headers,
-      body: JSON.stringify(payload)
+      body: payload
     });
 
     if (!response.ok) {
@@ -1949,10 +1992,11 @@ class NotionDatabaseLite extends NotionBase {
       payload["sorts"] = sort instanceof SortBase ? sort.value : sort;
     }
 
-    const response = await fetch(url, {
+    const response = await this.requestProvider({
+      url: url,
       method: "POST",
       headers: headers,
-      body: JSON.stringify(payload)
+      body: payload
     });
 
     if (!response.ok) {
