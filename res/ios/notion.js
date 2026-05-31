@@ -2005,6 +2005,7 @@ class NotionDatabaseLite extends NotionBase {
 
     const responseData = await response.json();
     this._datas = this._parse(responseData);
+    return this._datas;
   }
 
   // 수정 (인덱스 숫자 또는 오브젝트 직접 받기)

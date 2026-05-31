@@ -1713,14 +1713,16 @@ class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
         self._datas.append(new_page)
         return new_page
 
-    def read(self, *, filter: FilterBase | dict | None = None, sort: SortBase | dict | None = None, page_size: int=100):
+    def read(self, *, filter: FilterBase | dict | None = None, sort: SortBase | dict | None = None, page_size: int=100) -> list[NotionDatabasePage]:
         """
-        ㅁㄴㅇㅁㄴㅇ
+        데이터베이스를 읽어옴
 
         Args:
             filter:  Filter 오브젝트를 이용해서 표현하거나, 아니면 순수 딕셔너리를 이용
             sort: 정렬 기준
             page_size: 검색수 (최대 100)
+        Returns:
+            노션 데이터베이스 페이지 리스트
         """
         url = f"https://api.notion.com/v1/databases/{self.id}/query"
         headers = self._add_headers("2022-06-28")
@@ -1743,6 +1745,7 @@ class NotionDatabaseLite(NotionBase, Write, Read, Update, Remove):
             raise ValueError(response.json())
         
         self._datas = self._parse(response.json())
+        return self._datas
 
     @overload
     def update(self, page_or_index: NotionDatabasePage, update_properties_object_: DatabaseObject):
