@@ -7,7 +7,7 @@ async function scriptableProvider({ url, method, headers, body }) {
   const req = new Request(url);
   req.method = method;
   req.headers = headers;
-  if (body) req.bodyString = JSON.stringify(body);
+  if (body) req.body = JSON.stringify(body);
 
   const resJson = await req.loadJSON();
   return {
