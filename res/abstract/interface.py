@@ -11,13 +11,13 @@ class Read(ABC):
 
 class Write(ABC):
     @abstractmethod
-    def write(self):
+    def write(self, *args, **kwargs):
         raise NotImplementedError
 
 
 class Update(ABC):
     @abstractmethod
-    def update(self):
+    def update(self, *args, **kwargs):
         raise NotImplementedError
 
 

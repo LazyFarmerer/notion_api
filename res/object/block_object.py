@@ -3,7 +3,7 @@
 # 여기 참고하기
 # https://developers.notion.com/reference/block
 
-from typing import Literal
+from typing import Literal, Any
 from ..abstract.value import ListValueBase
 
 
@@ -93,26 +93,21 @@ class BookmarkBlockObject:
 
 
 class BreadcrumbBlockObject:
-    def object(self, value: str | None) -> dict:
-        print("Breadcrumb 정보")
-        print(value)
-        return {}
+    def object(self, value: None = None) -> dict:
+        # value 인자값 놔두는 이유 -> 블럭오브젝트 업데이트에서 오류나니까
+        return { "type": "breadcrumb", "breadcrumb": {} }
 
     def get(self, value: dict) -> dict:
-        print("Breadcrumb 정보")
-        print(value)
         return {}
 
 
 class BulletedListItemBlockObject:
-    def object(self, value: str | None) -> dict:
-        print("bulleted_list_item 정보")
-        print(value)
-        return {}
-    def get(self, value: dict) -> dict:
-        print("bulleted_list_item 정보")
-        print(value)
-        return {}
+    def object(self, value: str | None, *, color: text_color_type="default") -> dict:
+        result = { "bulleted_list_item": TextObject().object(value) }
+        result["bulleted_list_item"]["color"] = color
+        return result
+    def get(self, value: dict) -> str | None:
+        return TextObject().get(value)
 
 
 class CalloutBlockObject:
@@ -131,13 +126,10 @@ class CalloutBlockObject:
 
 class ChildDatabaseBlockObject:
     def object(self, value: str | None) -> dict:
-        print("child_database 정보")
-        print(value)
-        return {}
-    def get(self, value: dict) -> dict:
-        print("child_database 정보")
-        print(value)
-        return {}
+        result = { "child_database": { "title": value if value else "" } }
+        return result
+    def get(self, value: dict) -> str:
+        return value["title"]
 
 
 class ChildPageBlockObject:
@@ -167,46 +159,31 @@ class CodeBlockObject:
 
 class ColumnListAndColumnBlockObject:
     def object(self, value: str | None) -> dict:
-        print("ColumnListAndColumn 정보")
-        print(value)
-        return {}
+        type_ = value if value in ["column", "column_list"] else "column_list"
+        return { "type": type_, type_: {} }
     def get(self, value: dict) -> dict:
-        print("ColumnListAndColumn 정보")
-        print(value)
         return {}
 
 
 class DividerBlockObject:
     def object(self, value: str | None) -> dict:
-        print("divider 정보")
-        print(value)
         return { "type": "divider", "divider": {} }
     def get(self, value: dict) -> dict:
-        print("divider 정보")
-        print(value)
         return {}
 
 
 class EmbedBlockObject:
     def object(self, url: str | None) -> dict:
-        print("embed 정보")
-        print(url)
-        return {}
-    def get(self, value: dict) -> dict:
-        print("embed 정보")
-        print(value)
-        return value["embed"]["url"]
+        return { "embed": { "url": url if url else "" } }
+    def get(self, value: dict) -> str:
+        return value["url"]
 
 
 class EquationBlockObject:
     def object(self, value: str | None) -> dict:
-        print("equation 정보")
-        print(value)
-        return {}
-    def get(self, value: dict) -> dict:
-        print("equation 정보")
-        print(value)
-        return value["equation"]["expression"]
+        return { "equation": { "expression": value if value else "" } }
+    def get(self, value: dict) -> str:
+        return value["expression"]
 
 
 class FileBlockObject:
@@ -238,35 +215,25 @@ class ImageBlockObject:
 
 class LinkPreviewBlockObject:
     def object(self, value: str | None) -> dict:
-        print("link_preview 정보")
-        print(value)
-        return {}
-    def get(self, value: dict) -> dict:
-        print("link_preview 정보")
-        print(value)
-        return {}
+        return { "link_preview": { "url": value if value else "" } }
+    def get(self, value: dict) -> str:
+        return value["url"]
 
 
 class MentionBlockObject:
     def object(self, value: str | None) -> dict:
-        print("mention 정보")
-        print(value)
-        return {}
+        return { "mention": { "type": "user", "user": { "id": value } } } if value else {}
     def get(self, value: dict) -> dict:
-        print("mention 정보")
-        print(value)
-        return {}
+        return value
 
 
 class NumberedListItemBlockObject:
-    def object(self, value: str | None) -> dict:
-        print("numbered_list_item 정보")
-        print(value)
-        return {}
-    def get(self, value: dict) -> dict:
-        print("numbered_list_item 정보")
-        print(value)
-        return {}
+    def object(self, value: str | None, *, color: text_color_type="default") -> dict:
+        result = { "numbered_list_item": TextObject().object(value) }
+        result["numbered_list_item"]["color"] = color
+        return result
+    def get(self, value: dict) -> str | None:
+        return TextObject().get(value)
 
 
 class ParagraphBlockObject:
@@ -290,36 +257,57 @@ class PDFBlockObject:
 
 
 class QuoteBlockObject:
-    def object(self, value: str | None) -> dict:
-        print("quote 정보")
-        print(value)
-        return {}
-    def get(self, value: dict) -> dict:
-        print("quote 정보")
-        print(value)
-        return {}
+    def object(self, value: str | None, *, color: text_color_type="default") -> dict:
+        result = { "quote": TextObject().object(value) }
+        result["quote"]["color"] = color
+        return result
+    def get(self, value: dict) -> str | None:
+        return TextObject().get(value)
 
 
 class SyncedBlockBlockObject:
-    def object(self, value: str | None) -> dict:
-        print("synced_block 정보")
+    def object(self, block_id: str | None, *, block_object: BlockObject | None = None) -> dict:
+        if block_id:
+            synced_from = { "block_id": block_id , "type": "block_id"}
+        else:
+            synced_from = None
+
+        result: dict[str, Any] = {
+            "synced_block": {
+                "synced_from": synced_from
+            }
+        }
+
+        if block_object is not None:
+            result["synced_block"]["children"] = block_object.value
+
+        return result
+    def get(self, value: dict) -> dict | None:
+        print("synced 정보")
         print(value)
-        return {}
-    def get(self, value: dict) -> dict:
-        print("synced_block 정보")
-        print(value)
-        return {}
+        return value.get("synced_from")
 
 
 class TableBlockObject:
-    def object(self, value: str | None) -> dict:
-        print("table 정보")
-        print(value)
-        return {}
+    def object(self, value: str | int | None) -> dict:
+        width = 2
+        if isinstance(value, int):
+            width = value
+        elif isinstance(value, str) and value.isdigit():
+            width = int(value)
+        return {
+            "table": {
+                "table_width": width,
+                "has_column_header": False,
+                "has_row_header": False
+            }
+        }
     def get(self, value: dict) -> dict:
-        print("table 정보")
-        print(value)
-        return {}
+        return {
+            "table_width": value.get("table_width"),
+            "has_column_header": value.get("has_column_header"),
+            "has_row_header": value.get("has_row_header")
+        }
 
 
 class ToDoBlockObject:
@@ -364,12 +352,12 @@ class BlockObject(ListValueBase):
         result = BookmarkBlockObject().object(value)
         self._value.append(result)
         return self
-    def breadcrumb(self, value: str | None):
+    def breadcrumb(self, value: None = None):
         result = BreadcrumbBlockObject().object(value)
         self._value.append(result)
         return self
-    def bulleted_list_item(self, value: str | None):
-        result = BulletedListItemBlockObject().object(value)
+    def bulleted_list_item(self, value: str | None, *, color: text_color_type="default"):
+        result = BulletedListItemBlockObject().object(value, color=color)
         self._value.append(result)
         return self
     def callout(self, value: str | None, *, icon: str="💡", color: text_color_type = "gray_background"):
@@ -436,8 +424,8 @@ class BlockObject(ListValueBase):
         result = MentionBlockObject().object(value)
         self._value.append(result)
         return self
-    def numbered_list_item(self, value: str | None):
-        result = NumberedListItemBlockObject().object(value)
+    def numbered_list_item(self, value: str | None, *, color: text_color_type="default"):
+        result = NumberedListItemBlockObject().object(value, color=color)
         self._value.append(result)
         return self
     def text(self, value: str | None, *, color: text_color_type="default"):
@@ -448,12 +436,12 @@ class BlockObject(ListValueBase):
         result = PDFBlockObject().object(value)
         self._value.append(result)
         return self
-    def quote(self, value: str | None):
-        result = QuoteBlockObject().object(value)
+    def quote(self, value: str | None, *, color: text_color_type="default"):
+        result = QuoteBlockObject().object(value, color=color)
         self._value.append(result)
         return self
-    def synced_block(self, value: str | None):
-        result = SyncedBlockBlockObject().object(value)
+    def synced_block(self, value: str | None = None, *, block_object: BlockObject | None = None):
+        result = SyncedBlockBlockObject().object(value, block_object=block_object)
         self._value.append(result)
         return self
     def table(self, value: str | None):
